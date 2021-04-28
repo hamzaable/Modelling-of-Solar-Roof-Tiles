@@ -3,6 +3,7 @@ import pvlib
 
 # from pvlib.pvsystem import pvsystem
 
+# Testing for Github
 
 latitude = 50.9375
 longitude = 6.9603

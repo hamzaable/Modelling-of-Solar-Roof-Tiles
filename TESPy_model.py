@@ -10,7 +10,13 @@ from tespy.tools.logger import logging
 from tespy.tools.helpers import TESPyComponentError
 import math
 
-class sdp_subsys(subsystem):
+Temp_Units ={
+    'C': [273.15, 1], 'F': [459.67, 5 / 9], 'K': [0, 1],
+    'R': [0, 5 / 9]
+}
+
+
+class sdp_subsys(Subsystem):
     """
     subsystem definition for the sdp.
 
@@ -18,6 +24,8 @@ class sdp_subsys(subsystem):
     connected in series and also includes a gap between the tiles, where air
     is drawn in. This model supposes, that the air is drawn from a ventilator
     at the end of the roof. The ventilator is not included in the subsystem.
+
+    For connecting in series and parallel
 
     """
 
@@ -75,9 +83,11 @@ class sdp_subsys(subsystem):
 
         for i in range(self.num_sdp_series):
             j = str(i)
-            self.comps['merge_' + j] = merge(label=self.label +
+
+            self.comps['merge_' + j] = Merge(label=self.label +
                                              '_merge_' + j)
-            self.comps['sdp_' + j] = solar_collector(label=self.label +
+
+            self.comps['sdp_' + j] = SolarCollector(label=self.label +
                                                      '_sdp_' + j,
                                                      lkf_lin=self.lkf_lin_sdp,
                                                      lkf_quad=self.lkf_quad_sdp,
@@ -88,10 +98,14 @@ class sdp_subsys(subsystem):
                                                      Tamb=self.Tamb,
                                                      ks=self.ks_sdp,
                                                      eta_opt=1)
-            self.comps['valve_' + j] = valve(label=self.label + '_valve_' + j)
+
+            self.comps['Valve_' + j] = Valve(label=self.label + '_Valve_' + j)
+
             if self.zeta_sdp is not None:
-                self.comps['valve_' + j].set_attr(zeta=self.zeta_sdp)
-            self.comps['source' + j] = source(label=self.label + '_source_' + j)
+
+                self.comps['Valve_' + j].set_attr(zeta=self.zeta_sdp)
+            self.comps['Source' + j] = Source(label=self.label + '_Source_' + j)
+
 
     def _create_conns(self):
 
@@ -99,38 +113,38 @@ class sdp_subsys(subsystem):
             j = str(i)
 
             if i > 0:
-                self.conns['mesd_' + j] = connection(self.comps['merge_' +
+                self.conns['mesd_' + j] = Connection(self.comps['merge_' +
                                                                 str(i - 1)],
                                                      'out1',
                                                      self.comps['sdp_' + j],
                                                      'in1')
 
-            self.conns['sdme_' + j] = connection(self.comps['sdp_' + j],
+            self.conns['sdme_' + j] = Connection(self.comps['sdp_' + j],
                                                  'out1',
                                                  self.comps['merge_' + j],
                                                  'in1')
             if self.m_loss is not None:
-                self.conns['sova_' + j] = connection(
-                    self.comps['source' + j],
+                self.conns['sova_' + j] = Connection(
+                    self.comps['Source' + j],
                     'out1',
-                    self.comps['valve_' + j],
+                    self.comps['Valve_' + j],
                     'in1',
                     p=self.p_amb,
                     T=self.Tamb,
                     fluid={'air': 1},
                     m=self.m_loss)
             else:
-                self.conns['sova_' + j] = connection(
-                    self.comps['source' + j],
+                self.conns['sova_' + j] = Connection(
+                    self.comps['Source' + j],
                     'out1',
-                    self.comps['valve_' + j],
+                    self.comps['Valve_' + j],
                     'in1',
                     p=self.p_amb,
                     T=self.Tamb,
                     fluid={'air': 1},
                     m0=0.0001)
-            self.conns['vame_' + j] = connection(
-                self.comps['valve_' + j],
+            self.conns['vame_' + j] = Connection(
+                self.comps['Valve_' + j],
                 'out1',
                 self.comps['merge_' + j],
                 'in2',
@@ -156,7 +170,7 @@ class SDP_sucking():
 
         """
         Simulates the solar roof tile with a fan at the back of it, which is
-        "sucking" air from the sdps and into the air-source heat-pump.
+        "sucking" air from the sdps and into the air-Source heat-pump.
         This TESPy model simulates each sdp in a series of sdps and thus
         includes effects of leakage and uneven temperature distribution.
 
@@ -283,7 +297,7 @@ class SDP_sucking():
 
         # network
         fluid_list = ['air']
-        self.nw = network(fluids=fluid_list,
+        self.nw = Network(fluids=fluid_list,
                           p_unit='bar',
                           T_unit='C',
                           v_unit='m3 / s',
@@ -294,12 +308,12 @@ class SDP_sucking():
 
         # %% components
 
-        # sinks & sources
-        feed_coll = source('to collector')
-        from_coll = sink('from collector')
+        # Sinks & Sources
+        feed_coll = Source('to collector')
+        from_coll = Sink('from collector')
 
         # fan
-        fan = compressor('fan')
+        fan = Compressor('fan')
 
         mass_flow = mass_flow/self.num_sdp_parallel
 
@@ -318,32 +332,34 @@ class SDP_sucking():
                              m_loss=m_loss,
                              p_amb=p_amb)
 
-        # %% connections
+        # %% Connections
 
         out_num = self.num_sdp_series-1
-        feedc_sdp = connection(feed_coll,
+        feedc_sdp = Connection(feed_coll,
                                'out1',
                                sdp_sub.comps["sdp_0"],
                                'in1')
-        sdp_fan = connection(sdp_sub.comps["merge_"+str(out_num)],
+        sdp_fan = Connection(sdp_sub.comps["merge_"+str(out_num)],
                              'out1',
                              fan,
                              'in1')
         self.nw.add_conns(feedc_sdp, sdp_fan)
 
-        fan_fromc = connection(fan, 'out1', from_coll, 'in1')
+        fan_fromc = Connection(fan, 'out1', from_coll, 'in1')
         self.nw.add_conns(fan_fromc)
 
         self.nw.add_subsys(sdp_sub)
 
         # %% component parameters
+        # added on 4 /27 / 2021 > Hamza
+        fan.char_warnings = False
         fan.set_attr(
                 eta_s=0.5,
                 design=['eta_s'],
                 offdesign=['eta_s_char']
                 )
 
-        # %% connection parameters
+        # %% Connection parameters
         feedc_sdp.set_attr(
                 m0=mass_flow,
                 T=inlet_temp,
@@ -371,11 +387,12 @@ class SDP_sucking():
             self.nw.print_results()
 
         # %% return characteristic parameters
-        a = self.nw.T['C']
-        b = fan_fromc.T.val_SI
-        t_out = fan_fromc.T.val_SI-self.nw.T[self.nw.T_unit][0]
+
+
+
+        t_out = fan_fromc.T.val_SI-Temp_Units[self.nw.T_unit][0]
         p_fan = fan.P.val_SI*self.num_sdp_parallel
-        m_out = fan_fromc.m.val_SI*self.num_sdp_parallel
+        m_out = fan_fromc.m.val_SI * self.num_sdp_parallel
         return t_out, p_fan, m_out
 
     # %% calculation of the sdp
@@ -422,25 +439,28 @@ class SDP_sucking():
         """
 
         if ambient_temp is not None:
-            for comp in self.nw.comps.index:
-                if isinstance(comp, solar_collector):
+            for comp in self.nw.comps['object']:
+                if isinstance(comp, SolarCollector):
                     comp.set_attr(Tamb=ambient_temp)
 
         if absorption_incl is not None:
-            for comp in self.nw.comps.index:
-                if isinstance(comp, solar_collector):
+            for comp in self.nw.comps['object']:
+                if isinstance(comp, SolarCollector):
                     comp.set_attr(E=absorption_incl)
 
         if inlet_temp is not None:
-            for conn in self.nw.conns.index:
-                if isinstance(conn.source, source):
+# updated by Hamza
+            for conn in self.nw.conns['object']:
+                a = type(conn)
+                if isinstance(conn.source, Source):
                     conn.set_attr(T=inlet_temp)
 
         if mass_flow is not None:
             mass_flow = mass_flow/self.num_sdp_parallel
-            for conn in self.nw.conns.index:
-                if isinstance(conn.source, compressor):
+            for conn in self.nw.conns['object']:
+                if isinstance(conn.source, Compressor):
                     conn.set_attr(m=mass_flow)
+
 
         self.nw.save("sdp")
         # %% solving
@@ -450,13 +470,13 @@ class SDP_sucking():
             self.nw.print_results()
 
         # get parameters
-        for conn in self.nw.conns.index:
-            if isinstance(conn.source, compressor) & isinstance(conn.target, sink):
-                t_out = conn.T.val_SI-self.nw.T[self.nw.T_unit][0]
+        for conn in self.nw.conns['object']:
+            if isinstance(conn.source, Compressor) & isinstance(conn.target, Sink):
+                t_out = conn.T.val_SI- Temp_Units[self.nw.T_unit][0]
                 m_out = conn.m.val_SI*self.num_sdp_parallel
 
-        for comp in self.nw.comps.index:
-            if isinstance(comp, compressor):
+        for comp in self.nw.comps['object']:
+            if isinstance(comp, Compressor):
                 p_fan = comp.P.val*self.num_sdp_parallel
 
         return t_out, p_fan, m_out

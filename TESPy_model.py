@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Dec 28 22:06:44 2020
-
-@author: Vaishnavi Phadke
-"""
 from tespy.networks import network
 from tespy.components import (sink, source, valve, merge,
                               subsystem, compressor,

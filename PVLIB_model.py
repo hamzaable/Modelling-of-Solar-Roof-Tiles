@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Dec 28 22:06:11 2020
-
-@author: Vaishnavi Phadke
-"""
 import pvlib
 #from pvlib.pvsystem import pvsystem
 

@@ -350,8 +350,7 @@ class SDP_sucking():
 
         self.nw.add_subsys(sdp_sub)
 
-        # %% component parameters
-        # added on 4 /27 / 2021 > Hamza
+
         fan.char_warnings = False
         fan.set_attr(
                 eta_s=0.5,
@@ -449,7 +448,7 @@ class SDP_sucking():
                     comp.set_attr(E=absorption_incl)
 
         if inlet_temp is not None:
-# updated by Hamza
+
             for conn in self.nw.conns['object']:
                 a = type(conn)
                 if isinstance(conn.source, Source):

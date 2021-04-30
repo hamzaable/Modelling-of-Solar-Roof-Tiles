@@ -15,6 +15,7 @@ It can also be downloaded directly from git repository.
 ## Features
 - Solar Panel electrical model using Tespy
 - Solar Panel thermal model using Pvlib
+- Efficency Calculation
 ```python
 ```
 

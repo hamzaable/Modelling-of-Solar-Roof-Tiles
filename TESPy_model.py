@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-from tespy.networks import network
-from tespy.components import (sink, source, valve, merge,
-                              subsystem, compressor,
-                              solar_collector)
-from tespy.connections import connection
+
+
+from tespy.networks import Network
+from tespy.components import (Sink, Source, Valve, Merge,
+                              Subsystem, Compressor,
+                              SolarCollector)
+from tespy.connections import Connection
 
 from tespy.tools.logger import logging
 # from tespy.tools import logger

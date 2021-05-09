@@ -12,7 +12,7 @@ from tespy.tools.logger import logging
 from tespy.tools.helpers import TESPyComponentError
 import math
 
-Temp_Units ={
+Temp_Units = {
     'C': [273.15, 1], 'F': [459.67, 5 / 9], 'K': [0, 1],
     'R': [0, 5 / 9]
 }
@@ -87,27 +87,25 @@ class sdp_subsys(Subsystem):
             j = str(i)
 
             self.comps['merge_' + j] = Merge(label=self.label +
-                                             '_merge_' + j)
+                                                   '_merge_' + j)
 
             self.comps['sdp_' + j] = SolarCollector(label=self.label +
-                                                     '_sdp_' + j,
-                                                     lkf_lin=self.lkf_lin_sdp,
-                                                     lkf_quad=self.lkf_quad_sdp,
-                                                     A=self.A_sdp,
-                                                     E=self.E_sdp,
-                                                     D=self.d_sdp,
-                                                     L=self.l_sdp,
-                                                     Tamb=self.Tamb,
-                                                     ks=self.ks_sdp,
-                                                     eta_opt=1)
+                                                          '_sdp_' + j,
+                                                    lkf_lin=self.lkf_lin_sdp,
+                                                    lkf_quad=self.lkf_quad_sdp,
+                                                    A=self.A_sdp,
+                                                    E=self.E_sdp,
+                                                    D=self.d_sdp,
+                                                    L=self.l_sdp,
+                                                    Tamb=self.Tamb,
+                                                    ks=self.ks_sdp,
+                                                    eta_opt=1)
 
             self.comps['Valve_' + j] = Valve(label=self.label + '_Valve_' + j)
 
             if self.zeta_sdp is not None:
-
                 self.comps['Valve_' + j].set_attr(zeta=self.zeta_sdp)
             self.comps['Source' + j] = Source(label=self.label + '_Source_' + j)
-
 
     def _create_conns(self):
 
@@ -151,7 +149,6 @@ class sdp_subsys(Subsystem):
                 self.comps['merge_' + j],
                 'in2',
                 p0=1.01)
-
 
 
 class SDP_sucking():
@@ -223,10 +220,10 @@ class SDP_sucking():
 
         # equivalent diameter of the sdp to calculate the pressure loss via the
         # ks value
-        self.d_sdp = math.sqrt(thickness_sdp*width_sdp*2/math.pi)
+        self.d_sdp = math.sqrt(thickness_sdp * width_sdp * 2 / math.pi)
 
         # the surface area of the sdp in m²
-        self.surface_area_sdp = width_sdp*l_sdp
+        self.surface_area_sdp = width_sdp * l_sdp
 
         # zeta value for the leakage in each sdp
         self.zeta = zeta
@@ -317,7 +314,7 @@ class SDP_sucking():
         # fan
         fan = Compressor('fan')
 
-        mass_flow = mass_flow/self.num_sdp_parallel
+        mass_flow = mass_flow / self.num_sdp_parallel
 
         # sdp_subsystem
         sdp_sub = sdp_subsys('sdp',
@@ -336,12 +333,12 @@ class SDP_sucking():
 
         # %% Connections
 
-        out_num = self.num_sdp_series-1
+        out_num = self.num_sdp_series - 1
         feedc_sdp = Connection(feed_coll,
                                'out1',
                                sdp_sub.comps["sdp_0"],
                                'in1')
-        sdp_fan = Connection(sdp_sub.comps["merge_"+str(out_num)],
+        sdp_fan = Connection(sdp_sub.comps["merge_" + str(out_num)],
                              'out1',
                              fan,
                              'in1')
@@ -352,30 +349,29 @@ class SDP_sucking():
 
         self.nw.add_subsys(sdp_sub)
 
-
         fan.char_warnings = False
         fan.set_attr(
-                eta_s=0.5,
-                design=['eta_s'],
-                offdesign=['eta_s_char']
-                )
+            eta_s=0.5,
+            design=['eta_s'],
+            offdesign=['eta_s_char']
+        )
 
         # %% Connection parameters
         feedc_sdp.set_attr(
-                m0=mass_flow,
-                T=inlet_temp,
-                fluid={'air': 1},
-                p=p_amb,
-                )
+            m0=mass_flow,
+            T=inlet_temp,
+            fluid={'air': 1},
+            p=p_amb,
+        )
 
         sdp_fan.set_attr(
-                p0=1,
-                )
+            p0=1,
+        )
 
         fan_fromc.set_attr(
-                p=p_amb,
-                m=mass_flow,
-                )
+            p=p_amb,
+            m=mass_flow,
+        )
 
         # %% solving
 
@@ -389,10 +385,8 @@ class SDP_sucking():
 
         # %% return characteristic parameters
 
-
-
-        t_out = fan_fromc.T.val_SI-Temp_Units[self.nw.T_unit][0]
-        p_fan = fan.P.val_SI*self.num_sdp_parallel
+        t_out = fan_fromc.T.val_SI - Temp_Units[self.nw.T_unit][0]
+        p_fan = fan.P.val_SI * self.num_sdp_parallel
         m_out = fan_fromc.m.val_SI * self.num_sdp_parallel
         return t_out, p_fan, m_out
 
@@ -457,11 +451,10 @@ class SDP_sucking():
                     conn.set_attr(T=inlet_temp)
 
         if mass_flow is not None:
-            mass_flow = mass_flow/self.num_sdp_parallel
+            mass_flow = mass_flow / self.num_sdp_parallel
             for conn in self.nw.conns['object']:
                 if isinstance(conn.source, Compressor):
                     conn.set_attr(m=mass_flow)
-
 
         self.nw.save("sdp")
         # %% solving
@@ -473,11 +466,11 @@ class SDP_sucking():
         # get parameters
         for conn in self.nw.conns['object']:
             if isinstance(conn.source, Compressor) & isinstance(conn.target, Sink):
-                t_out = conn.T.val_SI- Temp_Units[self.nw.T_unit][0]
-                m_out = conn.m.val_SI*self.num_sdp_parallel
+                t_out = conn.T.val_SI - Temp_Units[self.nw.T_unit][0]
+                m_out = conn.m.val_SI * self.num_sdp_parallel
 
         for comp in self.nw.comps['object']:
             if isinstance(comp, Compressor):
-                p_fan = comp.P.val*self.num_sdp_parallel
+                p_fan = comp.P.val * self.num_sdp_parallel
 
         return t_out, p_fan, m_out

@@ -18,11 +18,14 @@ name = 'Cologne'
 altitude = 121
 timezone = 'Etc/GMT+2'
 
-dwd_data = pd.read_excel(r'704EEE00.xlsx')
+dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
                                                       "temp_air",
                                                       "wind_speed", "pressure"])
+# Assign Headers to pv_data Dataframe
+
 pv_data["DateTimeIndex"] = dwd_data.date
 pv_data["DateTimeIndex"] = pd.to_datetime(pv_data["DateTimeIndex"])
 pv_data["dni"] = dwd_data.irradiance_dir
@@ -32,9 +35,11 @@ pv_data["temp_air"] = dwd_data.temp
 pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
 
-house_data_read = pd.read_excel(r'house_demand.xlsx')
+
+house_data_read = pd.read_excel(r'house_demand.xlsx') # Hourly house demand (elec_cons , thermal_cons)
 house_data = pd.DataFrame(index=house_data_read.index, columns=["elec_cons", "thermal_cons"])
 
+# Assign Headers to pv_data Dataframe
 house_data["DateTimeIndex"] = house_data_read.date
 house_data["DateTimeIndex"] = pd.to_datetime(house_data["DateTimeIndex"])
 house_data["elec_cons"] = house_data_read.elec_cons
@@ -58,13 +63,14 @@ sdp.init_sdp(ambient_temp=-4,
              print_res=False)
 
 ######
-##Electrical Yeild
+# Electrical Yeild
 ######
 
 df = []
 df1 = []
 
 # for i in pv_data.index[0:8760]:
+# Looping through weather data profile
 for i in pv_data.index[0:30]:
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
@@ -72,7 +78,7 @@ for i in pv_data.index[0:30]:
     ghi = pv_data.ghi[i]
     dni = pv_data.dni[i]
     dhi = pv_data.dhi[i]
-
+    # finding different weather parameters using pvlib
     electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
                                     dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
@@ -103,7 +109,7 @@ for i in pv_data.index[0:30]:
     E_sdp = (0.93 * (electrical_data.Effective_Irradiance[i] * 0.10) - (electrical_data.Power[i])) / 0.10
     Tamb = pv_data.temp_air[i]
 
-    if (E_sdp == 0):
+    if E_sdp == 0:
         # in deg celcius
         t_out_init = Tamb
 
@@ -129,19 +135,18 @@ for i in pv_data.index[0:30]:
     elec_parameter = (house_data.elec_cons[i] + p_fan) < (electrical_data.Power[i] * num_sdp_parallel * num_sdp_series)
     thermal_parameter = (house_data.thermal_cons[i] < flux)
 
-    if (E_sdp == 0):
+    if E_sdp == 0:
         status = "System Off"
 
-    elif (elec_parameter == True) and (thermal_parameter == True):
+    elif (elec_parameter is True) and (thermal_parameter is True):
         status = "Good"
 
-    elif (elec_parameter == True) and (thermal_parameter == False):
+    elif (elec_parameter is True) and (thermal_parameter is False):
         status = "Increase Thermal Production (increase fan_power)"
-        # t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(ambient_temp=pv_data.temp_air[i], absorption_incl=pv_data.ghi[i], inlet_temp=pv_data.temp_air[i], mass_flow=0.42, print_res=False)
-        # t_out =  t_out_init
-        # p_fan =  p_fan_init
-        # m_out =  m_out_init
-        # flux = round((m_out*(t_out-Tamb)/(num_sdp_series*num_sdp_parallel*0.10)),2)
+        # t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(ambient_temp=pv_data.temp_air[i],
+        # absorption_incl=pv_data.ghi[i], inlet_temp=pv_data.temp_air[i], mass_flow=0.42, print_res=False) t_out =
+        # t_out_init p_fan =  p_fan_init m_out =  m_out_init flux = round((m_out*(t_out-Tamb)/(
+        # num_sdp_series*num_sdp_parallel*0.10)),2)
 
         # elec_parameter = (house_data.elec_cons[i]+p_fan)<(electrical_data.Power[i]*num_sdp_parallel*num_sdp_series)
         # thermal_parameter = (house_data.thermal_cons[i]<flux)
@@ -149,9 +154,10 @@ for i in pv_data.index[0:30]:
         # elec_parameter = (house_data.elec_cons[i]+p_fan)<(electrical_data.Power[i]*num_sdp_parallel*num_sdp_series)
         # thermal_parameter = (house_data.thermal_cons[i]<flux)
 
-    elif (elec_parameter == False) and (thermal_parameter == True):
+    elif (elec_parameter is False) and (thermal_parameter is True):
         status = "Decrease Thermal Production (reduce fan_power)"
-        # t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(ambient_temp=pv_data.temp_air[i], absorption_incl=pv_data.ghi[i], inlet_temp=pv_data.temp_air[i], mass_flow=0.42, print_res=False)
+        # t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(ambient_temp=pv_data.temp_air[i],
+        # absorption_incl=pv_data.ghi[i], inlet_temp=pv_data.temp_air[i], mass_flow=0.42, print_res=False)
         # t_out =  t_out_init
         # p_fan =  p_fan_init
         # m_out =  m_out_init
@@ -183,4 +189,3 @@ print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
 
 complete_data = pd.merge(electrical_data, thermal_data)
 complete_data.to_excel(r'Result2.xlsx')
-

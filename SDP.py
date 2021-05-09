@@ -83,21 +83,36 @@ for i in pv_data.index[0:30]:
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
                                     dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
                                     pressure=pv_data.pressure[i])
+    # Making an Array of results got from electrical_yield
     df1 = [i, time, temp_amb, round(electrical_yield.annual_energy, 2), int(electrical_yield.effective_irradiance)]
+
+    # This point is important because here we can add cooling effect
+
+
+
+
+
+
+    #
+
+    # Append df1 to Main 2D Array df
     df.append(df1)
 
 column_values = ["Index", "Time", "Tamb", "Power", "Effective_Irradiance"]
+# Assigning df all data to new varaible electrical data
 electrical_data = pd.DataFrame(data=df, columns=column_values)
-electrical_data.fillna(0)
-electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()
+electrical_data.fillna(0) # fill empty rows with 0
+electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum() #  finding total number of rows
 pd.set_option('display.max_colwidth', 40)
 print(electrical_data)
 
 electrical_data.to_excel(r'Results1.xlsx')
 
-#####
+# ####
 # thermal Yeild
-#####
+# ###
+
+
 
 y = 0
 df = []

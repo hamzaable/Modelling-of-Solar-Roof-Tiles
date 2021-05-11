@@ -66,9 +66,6 @@ sdp.init_sdp(ambient_temp=-4,
 # Electrical Yeild
 ######
 
-df = []
-df1 = []
-
 dfMainElec = []
 dfSubElec = []
 dfThermalMain = []
@@ -96,7 +93,7 @@ for i in pv_data.index[0:30]:
                - (dfSubElec[3])) / 0.10
 
     if E_sdp_1 == 0:
-        # in deg celcius
+        # in deg Celsius
         t_out_init = Tamb
 
         # Watt

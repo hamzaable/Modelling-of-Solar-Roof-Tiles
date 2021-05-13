@@ -68,6 +68,7 @@ sdp.init_sdp(ambient_temp=-4,
 
 dfMainElec = []
 dfSubElec = []
+dfSubElec_New = []
 dfThermalMain = []
 dfThermalSub = []
 # for i in pv_data.index[0:8760]:
@@ -85,12 +86,19 @@ for i in pv_data.index[0:30]:
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
                                     dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
                                     pressure=pv_data.pressure[i])
+    # Part of Step 1
+    T_PV_Temp_Model = float(electrical_yield.tcell)
+
     # Making an Array of results got from electrical_yield
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2), int(electrical_yield.effective_irradiance)]
+    # step 1
+    P_MP = dfSubElec[3]
+    effective_Iradiance =dfSubElec[3]
 
     # This point is important because here we can add cooling effect
-    E_sdp_1 = (0.93 * (dfSubElec[4] * 0.10)
-               - (dfSubElec[3])) / 0.10
+    #  Step 2
+    E_sdp_1 = (0.93 * (effective_Iradiance * 0.10)  - (P_MP)) / 0.10
+
 
     if E_sdp_1 == 0:
         # in deg Celsius
@@ -110,13 +118,28 @@ for i in pv_data.index[0:30]:
             mass_flow=1,
             print_res=False)
 
+    # Step 3
     t_out = t_out_init
+    # Step 4
+    t_avg = (T_PV_Temp_Model + t_out)/2
+    # Step 5 calculating Power again based on new temp
+    electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
+                                    time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                    dhi=pv_data.dhi[i], temp_amb=t_avg, wind_amb=pv_data.wind_speed[i],
+                                    pressure=pv_data.pressure[i])
+    dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance)]
+    P_MP = dfSubElec_New[3]
+
+    # Step 6 New E_SDP
+    E_sdp_1 = (0.93 * (effective_Iradiance * 0.10) - (P_MP)) / 0.10
+    # End of all steps
+
     p_fan = p_fan_init
     m_out = m_out_init
     flux = round((m_out * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2)
 
     elec_parameter = (house_data.elec_cons[i] + p_fan) \
-                     < (dfSubElec[3] * num_sdp_parallel * num_sdp_series)
+                     < (P_MP * num_sdp_parallel * num_sdp_series)
     thermal_parameter = (house_data.thermal_cons[i] < flux)
 
     if E_sdp_1 == 0:
@@ -159,7 +182,7 @@ for i in pv_data.index[0:30]:
     dfThermalSub = [i, time, Tamb, round(E_sdp_1, 2), t_out, p_fan, m_out, flux, status, elec_parameter, thermal_parameter]
     dfThermalMain.append(dfThermalSub)
 
-    dfMainElec.append(dfSubElec)
+    dfMainElec.append(dfSubElec_New)
 
 column_values_elec = ["Index", "Time", "Tamb", "Power", "Effective_Irradiance"]
 # Assigning df all data to new varaible electrical data
@@ -169,6 +192,7 @@ electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum() # 
 pd.set_option('display.max_colwidth', 40)
 print(electrical_data)
 electrical_data.to_excel(r'Results1.xlsx')
+
 
 column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out", "HeatFlux", "status",
                  "Elec_demand_met", "Heat_demand_met"]

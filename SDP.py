@@ -74,6 +74,7 @@ dfThermalSub = []
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
 for i in pv_data.index[0:30]:
+    print('Loop number : ' + str(i))
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -93,7 +94,7 @@ for i in pv_data.index[0:30]:
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2), int(electrical_yield.effective_irradiance)]
     # step 1
     P_MP = dfSubElec[3]
-    effective_Iradiance =dfSubElec[3]
+    effective_Iradiance =dfSubElec[4]
 
     # This point is important because here we can add cooling effect
     #  Step 2

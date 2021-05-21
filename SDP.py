@@ -18,7 +18,8 @@ name = 'Cologne'
 altitude = 121
 timezone = 'Etc/GMT+2'
 
-m_azimut = 180                          #Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)m_tilt = 45                             #Module tilt (Neigung) [°]
+m_azimut = 180  #Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+m_tilt = 45  #  #Module tilt (Neigung) [°]
 
 dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
@@ -86,9 +87,10 @@ for i in pv_data.index[0:30]:
     Tamb = pv_data.temp_air[i]
     # finding different weather parameters using pvlib
                                     
-     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, 
+    electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                    m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
-                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
+                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
+                                   temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
                                    
     # Part of Step 1
     T_PV_Temp_Model = float(electrical_yield.tcell)
@@ -129,7 +131,9 @@ for i in pv_data.index[0:30]:
     # Step 5 calculating Power again based on new temp
     electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, 
                                    m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
-                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
+                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                    dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
+
     dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance)]
     P_MP = dfSubElec_New[3]
 

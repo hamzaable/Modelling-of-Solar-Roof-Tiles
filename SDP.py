@@ -48,8 +48,8 @@ house_data["DateTimeIndex"] = pd.to_datetime(house_data["DateTimeIndex"])
 house_data["elec_cons"] = house_data_read.elec_cons
 house_data["thermal_cons"] = house_data_read.thermal_cons
 
-num_sdp_series = 12
-num_sdp_parallel = 38
+num_sdp_series = 2     #Changed from 12 to 2 for test purpose
+num_sdp_parallel = 1   ##Changed from 38 to 1 for test purpose
 
 #####
 # Thermal initialization
@@ -59,7 +59,7 @@ sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
 
 sdp.init_sdp(ambient_temp=-4,
              absorption_incl=300,
-             inlet_temp=-4,
+            inlet_temp=-4,
              mass_flow=1,
              # zeta=4e6,
              m_loss=0.001,

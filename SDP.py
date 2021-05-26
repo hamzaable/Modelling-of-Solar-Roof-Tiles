@@ -20,7 +20,6 @@ timezone = 'Etc/GMT+2'
 
 m_azimut = 180  #Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 m_tilt = 45  #  #Module tilt (Neigung) [°]
-
 dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
@@ -89,8 +88,7 @@ for i in pv_data.index[0:30]:
                                     
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                    m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
-                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
-                                   temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
+                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
                                    
     # Part of Step 1
     T_PV_Temp_Model = float(electrical_yield.tcell)
@@ -98,12 +96,12 @@ for i in pv_data.index[0:30]:
     # Making an Array of results got from electrical_yield
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2), int(electrical_yield.effective_irradiance)]
     # step 1
-    P_MP = dfSubElec[3]
+    P_MP = dfSubElec[3] / (num_sdp_series*num_sdp_parallel)
     effective_Iradiance =dfSubElec[4]
 
     # This point is important because here we can add cooling effect
     #  Step 2
-    E_sdp_1 = (0.93 * (effective_Iradiance )  - (P_MP)) 
+    E_sdp_1 = (0.93 * (effective_Iradiance * 0.10) - (P_MP)) / 0.10
 
 
     if E_sdp_1 == 0:
@@ -129,13 +127,14 @@ for i in pv_data.index[0:30]:
     # Step 4
     t_avg = (T_PV_Temp_Model + t_out)/2
     # Step 5 calculating Power again based on new temp
-    electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, 
+
+    electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                    m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
-                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                    dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
+                                   time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
 
     dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance)]
-    P_MP = dfSubElec_New[3]
+
+    P_MP = dfSubElec_New[3]/ (num_sdp_series*num_sdp_parallel)
 
     # Step 6 New E_SDP
     E_sdp_1 = (0.93 * (effective_Iradiance * 0.10) - (P_MP)) / 0.10
@@ -157,31 +156,9 @@ for i in pv_data.index[0:30]:
 
     elif (elec_parameter is True) and (thermal_parameter is False):
         status = "Increase Thermal Production (increase fan_power)"
-        # t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(ambient_temp=pv_data.temp_air[i],
-        # absorption_incl=pv_data.ghi[i], inlet_temp=pv_data.temp_air[i], mass_flow=0.42, print_res=False) t_out =
-        # t_out_init p_fan =  p_fan_init m_out =  m_out_init flux = round((m_out*(t_out-Tamb)/(
-        # num_sdp_series*num_sdp_parallel*0.10)),2)
-
-        # elec_parameter = (house_data.elec_cons[i]+p_fan)<(electrical_data.Power[i]*num_sdp_parallel*num_sdp_series)
-        # thermal_parameter = (house_data.thermal_cons[i]<flux)
-
-        # elec_parameter = (house_data.elec_cons[i]+p_fan)<(electrical_data.Power[i]*num_sdp_parallel*num_sdp_series)
-        # thermal_parameter = (house_data.thermal_cons[i]<flux)
 
     elif (elec_parameter is False) and (thermal_parameter is True):
         status = "Decrease Thermal Production (reduce fan_power)"
-        # t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(ambient_temp=pv_data.temp_air[i],
-        # absorption_incl=pv_data.ghi[i], inlet_temp=pv_data.temp_air[i], mass_flow=0.42, print_res=False)
-        # t_out =  t_out_init
-        # p_fan =  p_fan_init
-        # m_out =  m_out_init
-        # flux = round((m_out*(t_out-Tamb)/(num_sdp_series*num_sdp_parallel*0.10)),2)
-
-        # elec_parameter = (house_data.elec_cons[i]+p_fan)<(electrical_data.Power[i]*num_sdp_parallel*num_sdp_series)
-        # thermal_parameter = (house_data.thermal_cons[i]<flux)
-
-        # elec_parameter = (house_data.elec_cons[i]+p_fan)<(electrical_data.Power[i]*num_sdp_parallel*num_sdp_series)
-        # thermal_parameter = (house_data.thermal_cons[i]<flux)
 
     else:
         status = "System Off"

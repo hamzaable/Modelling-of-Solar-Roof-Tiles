@@ -94,6 +94,7 @@ dfSubElec = []
 dfSubElec_New = []
 dfThermalMain = []
 dfThermalSub = []
+
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
 for i in pv_data.index[8:30]:
@@ -105,6 +106,8 @@ for i in pv_data.index[8:30]:
     dni = pv_data.dni[i]
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
+    newResidue = 0
+    oldResidue = 0
     # finding different weather parameters using pvlib
                                     
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
@@ -112,8 +115,6 @@ for i in pv_data.index[8:30]:
                                    time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
                                    albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                    temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
-    # Part of Step 1
-    T_PV_Temp_Model = float(electrical_yield.tcell)
 
     # Making an Array of results got from electrical_yield
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2), int(electrical_yield.effective_irradiance)]
@@ -125,7 +126,7 @@ for i in pv_data.index[8:30]:
 
     # This point is important because here we can add cooling effect
     #  Step 2
-    E_sdp_1 = (0.93 * (effective_Iradiance )  - (P_MP))
+    E_sdp_1 = (0.93 * (effective_Iradiance * 0.10) - (P_MP)) / 0.10
 
     if E_sdp_1 == 0:
         # in deg Celsius
@@ -148,15 +149,24 @@ for i in pv_data.index[8:30]:
     # Step 3
     t_out = t_out_init
     # Step 4
+    T_PV_Temp_Model = float(electrical_yield.tcell)
     t_avg = (T_PV_Temp_Model + t_out)/2
+    # Step 4.5 finding residue
+    newResidue = t_avg - t_out
     # Step 5 calculating Power again based on new temp
 
+    while newResidue > 0.5:
+        print ("Hamza")
+        x= 7
+        x +=1
+        if x==8:
+            break
     electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                     m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series * num_sdp_parallel,
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
                                     dhi=pv_data.dhi[i],
                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                    temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
+                                    temp_amb=t_avg, wind_amb=pv_data.wind_speed[i],
                                     pressure=pv_data.pressure[i])
 
     dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2),
@@ -165,7 +175,7 @@ for i in pv_data.index[8:30]:
     P_MP = dfSubElec_New[3]/ (num_sdp_series*num_sdp_parallel)
 
     # Step 6 New E_SDP
-    E_sdp_1 = (0.93 * (effective_Iradiance )  - (P_MP))
+    E_sdp_1 = (0.93 * (effective_Iradiance * 0.10) - (P_MP)) / 0.10
     # End of all steps
 
     p_fan = p_fan_init

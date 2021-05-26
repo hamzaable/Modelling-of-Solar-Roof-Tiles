@@ -12,14 +12,25 @@ start = "01-01-{} 00:00".format(str(2019))
 end = "31-12-{} 23:00".format(str(2019))
 naive_times = pd.date_range(start=start, end=end, freq='1h')
 
-latitude = 50.9375
-longitude = 6.9603
-name = 'Cologne'
-altitude = 121
-timezone = 'Etc/GMT+2'
+"________Location Parameters___________"
+"______Photovoltaic Parameters_________"
 
-m_azimut = 180  #Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
-m_tilt = 45  #  #Module tilt (Neigung) [°]
+albedo = 0.20               # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Photovoltaik S.52
+a_r = 0.14                  # Spectral Corrections factor for different module glasses
+irrad_model= 'haydavies'    # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
+m_azimut = 180              # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+m_tilt = 45     	        # Module tilt (Neigung) [°]
+
+#======Module Parameters=======================================================
+# #ar=0.14
+module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8,
+          "Parallel_Strings": 2, "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568,
+          "Aisc": 0.0010, "Bvoco": -0.0158, "Bvmpo": -0.01608, "gamma_pmp": -0.3792,
+          "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439, "A4": 0.00002219}
+# =============================================================================
+
+"_____________Data Imports_____________"
+
 dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",

@@ -92,7 +92,7 @@ dfSubElec = []
 dfSubElec_New = []
 dfThermalMain = []
 dfThermalSub = []
-
+totalPowerDiff = 0
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
 for i in pv_data.index[8:30]:
@@ -104,8 +104,7 @@ for i in pv_data.index[8:30]:
     dni = pv_data.dni[i]
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
-    newResidue = 0
-    oldResidue = 0
+
     # finding different weather parameters using pvlib
 
     electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
@@ -120,7 +119,6 @@ for i in pv_data.index[8:30]:
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
                  int(electrical_yield.effective_irradiance)]
     # step 1
-
     P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel)
 
     effective_Iradiance = dfSubElec[4]
@@ -175,19 +173,34 @@ for i in pv_data.index[8:30]:
             break
 
 
-    P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
+    # final run with final temp of tcell and ambiant average
+    electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
+                                        m_azimut=m_azimut, m_tilt=m_tilt,
+                                        module_number=num_sdp_series * num_sdp_parallel,
+                                        time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                        dhi=pv_data.dhi[i],
+                                        albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
+                                        temp_amb=t_avg_new, wind_amb=pv_data.wind_speed[i],
+                                        pressure=pv_data.pressure[i], temp_avg=t_avg_new)
 
+    dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2),
+                     int(electrical_yield_new.effective_irradiance)]
+
+    P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
+    powerDiff = P_MP - P_MP_New
+    totalPowerDiff = powerDiff + totalPowerDiff
     # Step 6 New E_SDP
-    E_sdp_1 = (0.93 * (effective_Iradiance * module['Area']) - (P_MP)) / module['Area']
+    E_sdp_1 = (0.93 * (effective_Iradiance * module['Area']) - (P_MP_New)) / module['Area']
     # End of all steps
 
     p_fan = p_fan_init
     m_out = m_out_init
 
+    # should we use new amb temp here
     flux = round((m_out * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2)
 
     elec_parameter = (house_data.elec_cons[i] + p_fan) \
-                     < (P_MP * num_sdp_parallel * num_sdp_series)
+                     < (P_MP_New * num_sdp_parallel * num_sdp_series)
     thermal_parameter = (house_data.thermal_cons[i] < flux)
 
     if E_sdp_1 == 0:
@@ -231,6 +244,6 @@ print(thermal_data)
 
 Efficiency = thermal_data.loc["Total", "HeatFlux"] / thermal_data.loc["Total", "E_sdp_eff"]
 print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
-
+print(f'Total Power difference with new ambiant temp from tcell {round(totalPowerDiff,2)}')
 complete_data = pd.merge(electrical_data, thermal_data)
 complete_data.to_excel(r'Result2.xlsx')

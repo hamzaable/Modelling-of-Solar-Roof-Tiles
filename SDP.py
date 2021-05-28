@@ -154,7 +154,9 @@ for i in pv_data.index[8:30]:
     t_avg_new = t_avg
     newResidue = t_avg_new - t_out
     #
-    while newResidue > 0.2:
+    totalLoops = 0
+    while newResidue > 0.25:
+        totalLoops = totalLoops + 1
         electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                         m_azimut=m_azimut, m_tilt=m_tilt,
                                         module_number=num_sdp_series * num_sdp_parallel,
@@ -164,14 +166,14 @@ for i in pv_data.index[8:30]:
                                         temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
                                         pressure=pv_data.pressure[i],temp_avg=t_avg_new)
 
-        dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2),
-                     int(electrical_yield_new.effective_irradiance)]
         t_avg_old = t_avg_new
         t_avg_new = (float(electrical_yield_new.tcell_new) + t_out) / 2
         newResidue = t_avg_new - t_avg_old
-        if newResidue  <0.2:
+        # print(f'new residual {round(newResidue, 4)}')
+        if newResidue  <0.25:
             break
 
+    # print("total small loops = {}".format(totalLoops))
 
     # final run with final temp of tcell and ambiant average
     electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,

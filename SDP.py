@@ -5,6 +5,7 @@ import numpy as np
 
 ##########
 from PVLIB_model import Photovoltaic
+from PVLIB_model import cellTemperature
 from TESPy_model import SDP_sucking
 
 ##########
@@ -105,26 +106,22 @@ for i in pv_data.index[8:30]:
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
 
-    # finding different weather parameters using pvlib
 
+    # This electrical_yield is just for comparing power with and without cooling effect otherwise it has no use
     electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                     m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series * num_sdp_parallel,
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
                                     dhi=pv_data.dhi[i],
                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                     temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                    pressure=pv_data.pressure[i],temp_avg=pv_data.temp_air[i])
+                                    pressure=pv_data.pressure[i])
 
     # Making an Array of results got from electrical_yield
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
                  int(electrical_yield.effective_irradiance)]
-    # step 1
+
     P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel)
-
     effective_Iradiance = dfSubElec[4]
-
-    # This point is important because here we can add cooling effect
-    #  Step 2
     E_sdp_1 = (0.93 * (effective_Iradiance * module['Area']) - (P_MP)) / module['Area']
 
     if E_sdp_1 == 0:
@@ -145,37 +142,47 @@ for i in pv_data.index[8:30]:
             mass_flow=1,
             print_res=False)
 
+
+    # Cooling Effect Calculations Start from here
+    initCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
+                                          m_azimut=m_azimut, m_tilt=m_tilt,
+                                          time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                          dhi=pv_data.dhi[i],
+                                          albedo=albedo, irrad_model=irrad_model,
+                                          wind_amb=pv_data.wind_speed[i],
+                                          temp_avg=pv_data.temp_air[i])
+
     # Step 3
     t_out = t_out_init
     # Step 4
-    T_PV_Temp_Model = float(electrical_yield.tcell)
+    T_PV_Temp_Model = float(initCellTemperature.tcell)
     t_avg = (T_PV_Temp_Model + t_out) / 2
     # Step 5 residue to perform ite
     t_avg_new = t_avg
-    newResidue = t_avg_new - t_out
+    Residue = t_avg_new - t_out
     #
-    totalLoops = 0
-    while newResidue > 0.25:
-        totalLoops = totalLoops + 1
-        electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
-                                        m_azimut=m_azimut, m_tilt=m_tilt,
-                                        module_number=num_sdp_series * num_sdp_parallel,
-                                        time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                        dhi=pv_data.dhi[i],
-                                        albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                        temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                        pressure=pv_data.pressure[i],temp_avg=t_avg_new)
+    # totalLoops = 0
+    while Residue > 0.25:
+        # totalLoops = totalLoops + 1
+        newCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
+                                            m_azimut=m_azimut, m_tilt=m_tilt,
+                                            time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                            dhi=pv_data.dhi[i],
+                                            albedo=albedo, irrad_model=irrad_model,
+                                            wind_amb=pv_data.wind_speed[i],
+                                            temp_avg=t_avg_new)
 
         t_avg_old = t_avg_new
-        t_avg_new = (float(electrical_yield_new.tcell_new) + t_out) / 2
-        newResidue = t_avg_new - t_avg_old
-        # print(f'new residual {round(newResidue, 4)}')
-        if newResidue  <0.25:
+        t_avg_new = (float(newCellTemperature.tcell) + t_out) / 2
+        Residue = t_avg_new - t_avg_old
+        print(f'new residual {round(Residue, 4)}')
+        if Residue < 0.25:
             break
+
 
     # print("total small loops = {}".format(totalLoops))
 
-    # final run with final temp of tcell and ambiant average
+    # This electrical_yield_new is using ambiant temp found from cooling effect above
     electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                         m_azimut=m_azimut, m_tilt=m_tilt,
                                         module_number=num_sdp_series * num_sdp_parallel,
@@ -183,7 +190,7 @@ for i in pv_data.index[8:30]:
                                         dhi=pv_data.dhi[i],
                                         albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                         temp_amb=t_avg_new, wind_amb=pv_data.wind_speed[i],
-                                        pressure=pv_data.pressure[i], temp_avg=t_avg_new)
+                                        pressure=pv_data.pressure[i])
 
     dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2),
                      int(electrical_yield_new.effective_irradiance)]
@@ -225,6 +232,7 @@ for i in pv_data.index[8:30]:
     dfThermalMain.append(dfThermalSub)
 
     dfMainElec.append(dfSubElec_New)
+
 
 column_values_elec = ["Index", "Time", "Tamb [°C]", "Power [W]", "Effective Irradiance [W/m^2]"]
 # Assigning df all data to new varaible electrical data

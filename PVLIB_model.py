@@ -10,7 +10,7 @@ import pvlib
 
 class Photovoltaic():
     def __init__(self, latitude, longitude, altitude, timezone, m_azimut, m_tilt, module_number, time, dni, ghi, dhi,
-                 albedo, a_r, irrad_model, module, temp_amb, wind_amb, pressure, temp_avg):
+                 albedo, a_r, irrad_model, module, temp_amb, wind_amb, pressure):
         # Get Parameters
         self.temperature_model_parameters = pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS['sapm'][
             'close_mount_glass_glass']
@@ -56,7 +56,6 @@ class Photovoltaic():
 
         # Estimating cell temperatue via Faimann Model
         self.tcell = pvlib.temperature.faiman(self.total_irrad['poa_global'], temp_amb, wind_amb, u0=25.0, u1=6.84)
-        self.tcell_new = pvlib.temperature.faiman(self.total_irrad['poa_global'], temp_avg, wind_amb, u0=25.0, u1=6.84)
         # Manual Effective Irradiances calculation via:
         "Ee = f_1(AM_a) (E_b f_2(AOI) + f_d E_d)"
         "or"
@@ -114,4 +113,48 @@ class Photovoltaic():
         # Storing module Power to pass it on to the Excel Sheet
         self.annual_energy = self.module_number * self.single_diod_IV[
             'p_mp'].sum()  # in Watt hours, because p_mp is given in Watt
+
+
+
+class cellTemperature():
+    def __init__(self, latitude, longitude, m_azimut, m_tilt, time, dni, ghi, dhi,
+                 albedo, irrad_model, wind_amb, temp_avg):
+        # Get Parameters
+
+
+        self.times = time
+
+        self.latitude = latitude
+        self.longitude = longitude
+
+        self.m_azimut = m_azimut
+        self.m_tilt = m_tilt
+
+        self.clearsky_dni = dni
+        self.clearsky_ghi = ghi
+        self.clearsky_dhi = dhi
+
+        self.albedo = albedo
+        self.irrad_model = irrad_model
+
+        # Radiation & Power Calculations
+        self.solpos = pvlib.solarposition.get_solarposition(self.times, self.latitude, self.longitude)
+
+        self.dni_extra = pvlib.irradiance.get_extra_radiation(self.times)
+
+        self.total_irrad = pvlib.irradiance.get_total_irradiance(self.m_tilt, self.m_azimut,
+                                                                 self.solpos['apparent_zenith'],
+                                                                 self.solpos['azimuth'],
+                                                                 self.clearsky_dni, self.clearsky_ghi,
+                                                                 self.clearsky_dhi,
+                                                                 dni_extra=self.dni_extra,
+                                                                 model=self.irrad_model,
+                                                                 albedo=self.albedo)
+
+        # Estimating cell temperatue via Faimann Model
+        self.tcell = pvlib.temperature.faiman(self.total_irrad['poa_global'],
+                                                  temp_avg,
+                                                  wind_amb,
+                                                  u0=25.0,
+                                                  u1=6.84)
 

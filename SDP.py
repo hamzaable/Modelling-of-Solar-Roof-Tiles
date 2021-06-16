@@ -3,6 +3,9 @@
 import pandas as pd
 import numpy as np
 
+
+from tqdm import tqdm
+
 ##########
 from PVLIB_model import Photovoltaic
 from PVLIB_model import cellTemperature
@@ -12,6 +15,7 @@ from TESPy_model import SDP_sucking
 start = "01-01-{} 00:00".format(str(2019))
 end = "31-12-{} 23:00".format(str(2019))
 naive_times = pd.date_range(start=start, end=end, freq='1h')
+
 
 "________Location Parameters___________"
 latitude = 50.9375
@@ -89,6 +93,7 @@ sdp.init_sdp(ambient_temp=-4,
 ######
 
 dfMainElec = []
+dfMainElecNew = []
 dfSubElec = []
 dfSubElec_New = []
 dfThermalMain = []
@@ -96,8 +101,13 @@ dfThermalSub = []
 totalPowerDiff = 0
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
-for i in pv_data.index[8:30]:
-    print('Loop number : ' + str(i))
+# for i in trange(int(7e7), bar_format="{l_bar}%s{bar}%s{r_bar}" % (Fore.YELLOW, Fore.RESET)):
+
+# tqdm.pandas(desc="Progress Bar!")
+# pv_data.progress_apply(lambda x: x**2)
+
+for i in tqdm(pv_data.index[8:60]):
+# for i in tqdm(pv_data.index[1:8760]):
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -105,7 +115,6 @@ for i in pv_data.index[8:30]:
     dni = pv_data.dni[i]
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
-
 
     # This electrical_yield is just for comparing power with and without cooling effect otherwise it has no use
     electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
@@ -122,9 +131,9 @@ for i in pv_data.index[8:30]:
 
     P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel)
     effective_Iradiance = dfSubElec[4]
-    E_sdp_1 = (0.93 * (effective_Iradiance * module['Area']) - (P_MP)) / module['Area']
+    E_sdp_New = (0.93 * (effective_Iradiance * module['Area']) - (P_MP)) / module['Area']
 
-    if E_sdp_1 == 0:
+    if E_sdp_New == 0:
         # in deg Celsius
         t_out_init = Tamb
 
@@ -137,11 +146,10 @@ for i in pv_data.index[8:30]:
     else:
         t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
             ambient_temp=pv_data.temp_air[i],
-            absorption_incl=E_sdp_1,
+            absorption_incl=E_sdp_New,
             inlet_temp=pv_data.temp_air[i],
             mass_flow=1,
             print_res=False)
-
 
     # Cooling Effect Calculations Start from here
     initCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
@@ -165,20 +173,19 @@ for i in pv_data.index[8:30]:
     while Residue > 0.25:
         # totalLoops = totalLoops + 1
         newCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
-                                            m_azimut=m_azimut, m_tilt=m_tilt,
-                                            time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                            dhi=pv_data.dhi[i],
-                                            albedo=albedo, irrad_model=irrad_model,
-                                            wind_amb=pv_data.wind_speed[i],
-                                            temp_avg=t_avg_new)
+                                             m_azimut=m_azimut, m_tilt=m_tilt,
+                                             time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                             dhi=pv_data.dhi[i],
+                                             albedo=albedo, irrad_model=irrad_model,
+                                             wind_amb=pv_data.wind_speed[i],
+                                             temp_avg=t_avg_new)
 
         t_avg_old = t_avg_new
         t_avg_new = (float(newCellTemperature.tcell) + t_out) / 2
         Residue = t_avg_new - t_avg_old
-        print(f'new residual {round(Residue, 4)}')
+        # print(f'new residual {round(Residue, 4)}')
         if Residue < 0.25:
             break
-
 
     # print("total small loops = {}".format(totalLoops))
 
@@ -192,27 +199,26 @@ for i in pv_data.index[8:30]:
                                         temp_amb=t_avg_new, wind_amb=pv_data.wind_speed[i],
                                         pressure=pv_data.pressure[i])
 
-    dfSubElec_New = [i, time, temp_amb, round(electrical_yield_new.annual_energy, 2),
+    dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
                      int(electrical_yield_new.effective_irradiance)]
 
     P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
     powerDiff = P_MP - P_MP_New
     totalPowerDiff = powerDiff + totalPowerDiff
     # Step 6 New E_SDP
-    E_sdp_1 = (0.93 * (effective_Iradiance * module['Area']) - (P_MP_New)) / module['Area']
+    E_sdp_New = (0.93 * (effective_Iradiance * module['Area']) - (P_MP_New)) / module['Area']
     # End of all steps
 
     p_fan = p_fan_init
     m_out = m_out_init
 
-    # should we use new amb temp here
     flux = round((m_out * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2)
 
     elec_parameter = (house_data.elec_cons[i] + p_fan) \
                      < (P_MP_New * num_sdp_parallel * num_sdp_series)
     thermal_parameter = (house_data.thermal_cons[i] < flux)
 
-    if E_sdp_1 == 0:
+    if E_sdp_New == 0:
         status = "System Off"
 
     elif (elec_parameter is True) and (thermal_parameter is True):
@@ -227,22 +233,29 @@ for i in pv_data.index[8:30]:
     else:
         status = "System Off"
 
-    dfThermalSub = [i, time, Tamb, round(E_sdp_1, 2), t_out, p_fan, m_out, flux, status, elec_parameter,
+    dfThermalSub = [i, time, Tamb, round(E_sdp_New, 2), t_out, p_fan, m_out, flux, status, elec_parameter,
                     thermal_parameter]
     dfThermalMain.append(dfThermalSub)
 
-    dfMainElec.append(dfSubElec_New)
-
+    dfMainElec.append(dfSubElec)
+    dfMainElecNew.append(dfSubElec_New)
 
 column_values_elec = ["Index", "Time", "Tamb [°C]", "Power [W]", "Effective Irradiance [W/m^2]"]
 # Assigning df all data to new varaible electrical data
+electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
+electrical_data_New.fillna(0)  # fill empty rows with 0
+electrical_data_New.loc['Total'] = electrical_data_New.select_dtypes(np.number).sum()  # finding total number of rows
+pd.set_option('display.max_colwidth', 40)
+electrical_data_New.to_excel(r'ResultsWithCoolingEffect.xlsx')
+
+# For Without Cooling Effect
 electrical_data = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
 electrical_data.fillna(0)  # fill empty rows with 0
 electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
 pd.set_option('display.max_colwidth', 40)
-print(electrical_data)
+electrical_data.to_excel(r'ResultsWithoutCoolingEffect.xlsx')
 
-electrical_data.to_excel(r'Results1.xlsx')
+
 # electrical_data.to_excel(r'Electrical_Yield_Single_Diod_Model.xlsx')
 
 column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out", "HeatFlux", "status",
@@ -250,10 +263,12 @@ column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out"
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
 pd.set_option('display.max_colwidth', 8)
-print(thermal_data)
+# print(thermal_data)
 
 Efficiency = thermal_data.loc["Total", "HeatFlux"] / thermal_data.loc["Total", "E_sdp_eff"]
+print(f'Total Power difference with new ambiant temp from tcell {round(totalPowerDiff, 2)}')
 print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
-print(f'Total Power difference with new ambiant temp from tcell {round(totalPowerDiff,2)}')
+complete_data = pd.merge(electrical_data_New, thermal_data)
+complete_data.to_excel(r'CompleteResult.xlsx')
 complete_data = pd.merge(electrical_data, thermal_data)
-complete_data.to_excel(r'Result2.xlsx')
+complete_data.to_excel(r'CompleteResultWithoutCoolingEffect.xlsx')

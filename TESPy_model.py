@@ -241,7 +241,7 @@ class SDP_sucking():
                  p_amb=1.01325,
                  m_loss=None,
                  zeta=None,
-                 print_res=True):
+                 print_res=False):
         """
         Initializing the TESPy simulation of the SDP. This initialization is
         stored in the folder "sdp", which is then used by the calculate_sdp
@@ -303,7 +303,8 @@ class SDP_sucking():
                           m_range=[0.0001, 11],
                           p_range=[0.9, 1.02],
                           h_range=[0, 100000],
-                          T_range=[-10, 100])
+                          T_range=[-10, 100],
+                          iterinfo= False )
 
         # %% components
 
@@ -378,6 +379,7 @@ class SDP_sucking():
         mode = 'design'
         self.nw.check_network()
         # self.nw.save('sdp')
+        # self.nw.solve(mode=mode)
         self.nw.solve(mode=mode)
         self.nw.save('sdp')
         if print_res:

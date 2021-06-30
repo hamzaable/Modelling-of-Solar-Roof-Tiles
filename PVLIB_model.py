@@ -10,7 +10,7 @@ import pvlib
 
 class Photovoltaic():
     def __init__(self, latitude, longitude, altitude, timezone, m_azimut, m_tilt, module_number, time, dni, ghi, dhi,
-                 albedo, a_r, irrad_model, module, temp_amb, wind_amb, pressure):
+                 albedo, a_r, irrad_model, module, temp_amb, wind_amb, pressure,cell_temp):
         # Get Parameters
         self.temperature_model_parameters = pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS['sapm'][
             'close_mount_glass_glass']
@@ -55,7 +55,10 @@ class Photovoltaic():
                                                                  albedo=self.albedo)
 
         # Estimating cell temperatue via Faimann Model
-        self.tcell = pvlib.temperature.faiman(self.total_irrad['poa_global'], temp_amb, wind_amb, u0=25.0, u1=6.84)
+        # self.tcell = pvlib.temperature.faiman(self.total_irrad['poa_global'], temp_amb, wind_amb, u0=25.0, u1=6.84)
+
+        self.tcell = cell_temp
+
         # Manual Effective Irradiances calculation via:
         "Ee = f_1(AM_a) (E_b f_2(AOI) + f_d E_d)"
         "or"

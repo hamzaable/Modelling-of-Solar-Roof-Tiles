@@ -1,3 +1,13 @@
 label;comp_type;busses;bus_param;bus_P_ref;bus_char;bus_base;design;offdesign;design_path;local_design;local_offdesign;pr;pr_set;pr_var;zeta;zeta_set;zeta_var;dp_char;dp_char_set;dp_char_param
-sdp_Valve_0;Valve;[];[];[];[];[];[];[];nan;False;False;0.9089785121000891;False;False;13883900970.158329;False;False;0x000001AD57FA6D30;False;m
-sdp_Valve_1;Valve;[];[];[];[];[];[];[];nan;False;False;0.8074129937598601;False;False;27560749909.14392;False;False;0x000001AD57FA6490;False;m
+sdp_Valve_0;Valve;[];[];[];[];[];[];[];nan;False;False;0.9991003726842093;False;False;2916719646.6757317;False;False;0x00000210929061F0;False;m
+sdp_Valve_1;Valve;[];[];[];[];[];[];[];nan;False;False;0.9981900458918721;False;False;3526643983.3230705;False;False;0x0000021090B923D0;False;m
+sdp_Valve_2;Valve;[];[];[];[];[];[];[];nan;False;False;0.9972659160479879;False;False;3106162678.126056;False;False;0x00000210929060D0;False;m
+sdp_Valve_3;Valve;[];[];[];[];[];[];[];nan;False;False;0.9963236634662943;False;False;2378268890.5776772;False;False;0x0000021090B92400;False;m
+sdp_Valve_4;Valve;[];[];[];[];[];[];[];nan;False;False;0.9953572516764907;False;False;1661196274.0711858;False;False;0x000002109305B7F0;False;m
+sdp_Valve_5;Valve;[];[];[];[];[];[];[];nan;False;False;0.9943580212008412;False;False;1040466481.4906301;False;False;0x000002109305B160;False;m
+sdp_Valve_6;Valve;[];[];[];[];[];[];[];nan;False;False;0.9933123523156369;False;False;616121031.7291325;False;False;0x000002109305B670;False;m
+sdp_Valve_7;Valve;[];[];[];[];[];[];[];nan;False;False;0.9921993908621891;False;False;397712117.05925685;False;False;0x000002109305BBE0;False;m
+sdp_Valve_8;Valve;[];[];[];[];[];[];[];nan;False;False;0.9909928154565396;False;False;215897909.36383176;False;False;0x0000021094B5D0D0;False;m
+sdp_Valve_9;Valve;[];[];[];[];[];[];[];nan;False;False;0.9896431884803856;False;False;129888068.73700549;False;False;0x0000021090AF7D60;False;m
+sdp_Valve_10;Valve;[];[];[];[];[];[];[];nan;False;False;0.988082711755724;False;False;70716380.96247482;False;False;0x0000021093697670;False;m
+sdp_Valve_11;Valve;[];[];[];[];[];[];[];nan;False;False;0.9861885215646883;False;False;37528905.282856956;False;False;0x0000021093697970;False;m

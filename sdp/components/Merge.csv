@@ -1,3 +1,13 @@
 label;comp_type;busses;bus_param;bus_P_ref;bus_char;bus_base;design;offdesign;design_path;local_design;local_offdesign;num_in;num_in_set
-sdp_merge_1;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_11;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
 sdp_merge_0;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_1;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_2;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_3;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_4;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_5;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_6;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_7;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_8;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_9;Merge;[];[];[];[];[];[];[];nan;False;False;2;True
+sdp_merge_10;Merge;[];[];[];[];[];[];[];nan;False;False;2;True

@@ -65,24 +65,40 @@ house_data["DateTimeIndex"] = pd.to_datetime(house_data["DateTimeIndex"])
 house_data["elec_cons"] = house_data_read.elec_cons
 house_data["thermal_cons"] = house_data_read.thermal_cons
 
+"______MassFlow Loss Import_________"
 
+#Import Mass flow loss table
+mass_flow_loss = pd.read_excel(r'CFD_Daten.xlsx', sheet_name=1)                                         # mass flow losses for each SRT string in [kg/s]
+mass_flow_loss = mass_flow_loss.drop(['position', 'Massenstrom_[kg/s]'], axis=1)                        # Erase unnecessary columns
+mass_flow_loss = mass_flow_loss.dropna()                                                                # Erase Row with Nan values
+mass_flow_loss = mass_flow_loss.reset_index(drop=True)                                                  # Reset index
+mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine_first(mass_flow_loss)  # Divide through factor 1.3
+first_c = mass_flow_loss.pop('undichtigkeit')                                                           # Reassemble Dataframe
+mass_flow_loss.insert(0, 'undichtigkeit', first_c)
+
+# mass_flow_loss = 0.001
+# mass_flow_loss = None
+                                              
 "______TESPy Model Parameters_________"
 
-num_sdp_series = 2     #Changed from 12 to 2 for test purpose
-num_sdp_parallel = 1   ##Changed from 38 to 1 for test purpose
-
+num_sdp_series = 12     #Changed from 12 to 2 for test purpose
+num_sdp_parallel = 16   #Changed from 38 to 1 for test purpose
+ks_SRT = 0.011          #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+p_amb=1.01325           #Atmospheric pressure in Bar
 #####
 # Thermal initialization
 #####
 sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
-                  sdp_in_series=num_sdp_series)
+                  sdp_in_series=num_sdp_series,
+                  #ks=ks
+                  )
 
 sdp.init_sdp(ambient_temp=-4,
              absorption_incl=300,
-            inlet_temp=-4,
+             inlet_temp=-4,
              mass_flow=1,
-             # zeta=4e6,
-             m_loss=0.001,
+             #zeta=4e6,
+             m_loss=mass_flow_loss,
              print_res=False)
 
 "_____________Calculations____________"
@@ -98,7 +114,7 @@ dfThermalMain = []
 dfThermalSub = []
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
-for i in pv_data.index[0:30]:
+for i in pv_data.index[3599:3767]:      #3599:3767 --> One week in June
     print('Loop number : ' + str(i))
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
@@ -145,6 +161,7 @@ for i in pv_data.index[0:30]:
             absorption_incl=E_sdp_1,
             inlet_temp=pv_data.temp_air[i],
             mass_flow=1,
+            ks_SRT=ks_SRT,
             print_res=False)
 
     # Step 3
@@ -237,4 +254,6 @@ print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
 
 complete_data = pd.merge(electrical_data, thermal_data)
 complete_data.to_excel(r'Result2.xlsx')
+
+P_Valve = sdp.plot_temperature_curve(p_amb=p_amb)
 

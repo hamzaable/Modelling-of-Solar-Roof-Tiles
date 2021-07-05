@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-
+import pandas as pd
+import matplotlib.pyplot as plt
 from tespy.networks import Network
 from tespy.components import (Sink, Source, Valve, Merge,
                               Subsystem, Compressor,
@@ -87,10 +88,10 @@ class sdp_subsys(Subsystem):
             j = str(i)
 
             self.comps['merge_' + j] = Merge(label=self.label +
-                                                   '_merge_' + j)
+                                             '_merge_' + j)
 
             self.comps['sdp_' + j] = SolarCollector(label=self.label +
-                                                          '_sdp_' + j,
+                                                    '_sdp_' + j,
                                                     lkf_lin=self.lkf_lin_sdp,
                                                     lkf_quad=self.lkf_quad_sdp,
                                                     A=self.A_sdp,
@@ -101,11 +102,11 @@ class sdp_subsys(Subsystem):
                                                     ks=self.ks_sdp,
                                                     eta_opt=1)
 
-            self.comps['Valve_' + j] = Valve(label=self.label + '_Valve_' + j)
+            self.comps['valve_' + j] = Valve(label=self.label + '_Valve_' + j)
 
             if self.zeta_sdp is not None:
-                self.comps['Valve_' + j].set_attr(zeta=self.zeta_sdp)
-            self.comps['Source' + j] = Source(label=self.label + '_Source_' + j)
+                self.comps['valve_' + j].set_attr(zeta=self.zeta_sdp)
+            self.comps['source_' + j] = Source(label=self.label + '_Source_' + j)
 
     def _create_conns(self):
 
@@ -123,28 +124,41 @@ class sdp_subsys(Subsystem):
                                                  'out1',
                                                  self.comps['merge_' + j],
                                                  'in1')
+            
             if self.m_loss is not None:
-                self.conns['sova_' + j] = Connection(
-                    self.comps['Source' + j],
-                    'out1',
-                    self.comps['Valve_' + j],
-                    'in1',
-                    p=self.p_amb,
-                    T=self.Tamb,
-                    fluid={'air': 1},
-                    m=self.m_loss)
+                if isinstance(self.m_loss, pd.DataFrame):
+                   self.conns['sova_' + j] = Connection(
+                        self.comps['source_' + j],
+                        'out1',
+                        self.comps['valve_' + j],
+                        'in1',
+                        p=self.p_amb,
+                        T=self.Tamb,
+                        fluid={'air': 1},
+                        m=self.m_loss.iloc[i][1])
+                else:
+                    self.conns['sova_' + j] = Connection(
+                        self.comps['source_' + j],
+                        'out1',
+                        self.comps['valve_' + j],
+                        'in1',
+                        p=self.p_amb,
+                        T=self.Tamb,
+                        fluid={'air': 1},
+                        m=self.m_loss)
             else:
                 self.conns['sova_' + j] = Connection(
-                    self.comps['Source' + j],
+                    self.comps['source_' + j],
                     'out1',
-                    self.comps['Valve_' + j],
+                    self.comps['valve_' + j],
                     'in1',
                     p=self.p_amb,
                     T=self.Tamb,
                     fluid={'air': 1},
                     m0=0.0001)
+                
             self.conns['vame_' + j] = Connection(
-                self.comps['Valve_' + j],
+                self.comps['valve_' + j],
                 'out1',
                 self.comps['merge_' + j],
                 'in2',
@@ -397,6 +411,7 @@ class SDP_sucking():
                       absorption_incl,
                       inlet_temp,
                       mass_flow,
+                      ks_SRT,
                       p_amb=1.01325,
                       print_res=True):
         """
@@ -418,6 +433,13 @@ class SDP_sucking():
             mass_flow : float
                 mass flow of air at the point behind the fan. It will evenly be
                 devided by the model to each parallel string of sdps
+                
+            ks_SRT: float
+                ks/roughness value for SRTs, delivered to calculate the pressure 
+                Drop over a hole String of SRTs in Off-Design mode.
+                The goal of using the ks value is to adjust the pressure drop of 
+                the SRTs in an iterative way so that they fit the more accure 
+                results for the pressure drop from the CFD modelling.
 
         Returns:
         --------
@@ -442,6 +464,11 @@ class SDP_sucking():
             for comp in self.nw.comps['object']:
                 if isinstance(comp, SolarCollector):
                     comp.set_attr(E=absorption_incl)
+                    
+        if ks_SRT is not None:
+            for comp in self.nw.comps['object']:
+                if isinstance(comp, SolarCollector):
+                    comp.set_attr(ks=ks_SRT)
 
         if inlet_temp is not None:
 
@@ -472,5 +499,40 @@ class SDP_sucking():
         for comp in self.nw.comps['object']:
             if isinstance(comp, Compressor):
                 p_fan = comp.P.val * self.num_sdp_parallel
-
+                
         return t_out, p_fan, m_out
+    
+    
+    def plot_temperature_curve(self, 
+                               p_amb):
+        
+        Valve_name = "Valve {}"
+        i = 0
+        p_Valve = []
+        for comp in self.nw.comps['object']:
+            if isinstance(comp, Valve):
+                                
+                p_Valve.append(
+                {
+                    'Valve': Valve_name.format(str(i)),
+                    'Pressure [bar]': comp.pr.val.round(8),
+                    'Pressure Difference [bar]': (p_amb - comp.pr.val.round(8)).round(8)
+                }
+                )
+                i=i+1
+                
+        P_Valve=pd.DataFrame(p_Valve) 
+        
+        fig, ax = plt.subplots(figsize=(8,5), sharex=True)
+
+        ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='red', label='Druck [bar]')
+        ax.set_xlabel("Valve", fontsize=14)
+        ax.set_ylabel("Pressure [bar]", fontsize=14)
+        ax2= ax.twinx()
+        ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [bar]'], linestyle='solid', label='Druckdifferenz [bar]')
+        plt.title('Pressure Drop & Pressure Difference to ambient Pressure in the Valves of the subsystem')
+        ax2.legend()
+        plt.gcf().autofmt_xdate() 
+        
+        return P_Valve
+ 

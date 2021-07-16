@@ -516,7 +516,7 @@ class SDP_sucking():
                 {
                     'Valve': Valve_name.format(str(i)),
                     'Pressure [bar]': comp.pr.val.round(8),
-                    'Pressure Difference [bar]': (p_amb - comp.pr.val.round(8)).round(8)
+                    'Pressure Difference [Pa]': ((p_amb - comp.pr.val.round(8)).round(8)*-1)*100000
                 }
                 )
                 i=i+1
@@ -529,7 +529,8 @@ class SDP_sucking():
         ax.set_xlabel("Valve", fontsize=14)
         ax.set_ylabel("Pressure [bar]", fontsize=14)
         ax2= ax.twinx()
-        ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [bar]'], linestyle='solid', label='Druckdifferenz [bar]')
+        ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [Pa]'], linestyle='solid', label='Druckdifferenz [Pa]')
+        ax2.set_ylabel("Druckdifferenz [Pa]", fontsize=14)
         plt.title('Pressure Drop & Pressure Difference to ambient Pressure in the Valves of the subsystem')
         ax2.legend()
         plt.gcf().autofmt_xdate() 

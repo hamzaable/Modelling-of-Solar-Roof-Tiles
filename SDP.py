@@ -68,7 +68,7 @@ house_data["thermal_cons"] = house_data_read.thermal_cons
 "______MassFlow Loss Import_________"
 
 #Import Mass flow loss table
-mass_flow_loss = pd.read_excel(r'CFD_Daten.xlsx', sheet_name=1)                                         # mass flow losses for each SRT string in [kg/s]
+mass_flow_loss = pd.read_excel(r'CFD_Daten_July.xlsx', sheet_name=1)                                    # mass flow losses for each SRT string in [kg/s]
 mass_flow_loss = mass_flow_loss.drop(['position', 'Massenstrom_[kg/s]'], axis=1)                        # Erase unnecessary columns
 mass_flow_loss = mass_flow_loss.dropna()                                                                # Erase Row with Nan values
 mass_flow_loss = mass_flow_loss.reset_index(drop=True)                                                  # Reset index
@@ -83,7 +83,7 @@ mass_flow_loss.insert(0, 'undichtigkeit', first_c)
 
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
 num_sdp_parallel = 16   #Changed from 38 to 1 for test purpose
-ks_SRT = 0.011          #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+ks_SRT = 0.00000000005          #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
 p_amb=1.01325           #Atmospheric pressure in Bar
 #####
 # Thermal initialization
@@ -114,7 +114,7 @@ dfThermalMain = []
 dfThermalSub = []
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
-for i in pv_data.index[3599:3767]:      #3599:3767 --> One week in June
+for i in pv_data.index[3599:3623]:      #3599:3767 --> One week in June
     print('Loop number : ' + str(i))
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]

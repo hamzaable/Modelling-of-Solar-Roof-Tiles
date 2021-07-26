@@ -511,29 +511,37 @@ class SDP_sucking():
         p_Valve = []
         for comp in self.nw.comps['object']:
             if isinstance(comp, Valve):
-                                
+                
+                if i == 0:
+                    p_ref_Valve0 = comp.pr.val
+                    print('\nPressure in Valve 1 (reference pressure of the system) in Bar:', comp.pr.val.round(8),
+                          '\nCumulative (!!) pressure loss for the SRT string in Pa:\n')
+                                    
                 p_Valve.append(
                 {
-                    'Valve': Valve_name.format(str(i)),
-                    'Pressure [bar]': comp.pr.val.round(8),
-                    'Pressure Difference [Pa]': ((p_amb - comp.pr.val.round(8)).round(8)*-1)*100000
+                    'Valve': Valve_name.format(str(i+1)),
+                    'Pressure [bar]': comp.pr.val,
+                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000
                 }
                 )
+                if i > 0:
+                    print('Pr von', Valve_name.format(str(i)), 'zu', Valve_name.format(str(i+1)), 'in Pa:', (((p_ref_Valve0 - comp.pr.val)*-1)*100000).round(2))
                 i=i+1
                 
         P_Valve=pd.DataFrame(p_Valve) 
         
         fig, ax = plt.subplots(figsize=(8,5), sharex=True)
 
-        ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='red', label='Druck [bar]')
+        ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='red', label='Pressure [bar]')
         ax.set_xlabel("Valve", fontsize=14)
         ax.set_ylabel("Pressure [bar]", fontsize=14)
         ax2= ax.twinx()
-        ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [Pa]'], linestyle='solid', label='Druckdifferenz [Pa]')
+        ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [Pa]'], linestyle='solid', label='Pressure Difference [Pa]')
         ax2.set_ylabel("Druckdifferenz [Pa]", fontsize=14)
         plt.title('Pressure Drop & Pressure Difference to ambient Pressure in the Valves of the subsystem')
-        ax2.legend()
+        fig.legend(bbox_to_anchor=[0.875, 0.85], loc="upper right")
         plt.gcf().autofmt_xdate() 
+         
         
         return P_Valve
  

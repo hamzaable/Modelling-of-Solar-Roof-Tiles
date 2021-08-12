@@ -28,13 +28,82 @@ irrad_model= 'haydavies'    # Model for Irradiation calculation. Choose from: 'i
 m_azimut = 180              # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 m_tilt = 45     	        # Module tilt (Neigung) [°]
 
+"""
+        The module dict defined below is important for effective irradiance 
+        calculations as well as the fitting of the IV-Curve via the fit-CEC-SAM 
+        function, which results are used to calculate the PV-power output via 
+        the single-diod-model. Within the module dict follwing specs can be 
+        defined by the user:
+
+        Specs:
+        -----------
+
+            A0 : float
+                Airmass coefficient a0
+
+            A1 : float
+                Airmass coefficient a1
+
+            A2 : float
+                Airmass coefficient a2
+
+            A3 : float
+                Airmass coefficient a3
+
+            A4 : float
+                Airmass coefficient a4
+
+            Aisc : float
+                Temperature coefficient of short circuit current [A/C]
+
+            Area : float
+                Area of one cell [sqm]
+                
+            Bvoco : float
+                Temperature coefficient of open circuit voltage [V/C]
+            
+            Cells_in_Series : int
+                Number of cells in series [-]
+                
+            Impo : float
+                Current at maximum power point [A]
+                
+            Isco : float
+                Short circuit current [A]
+                
+            Material : str
+                the length (or height) of the sdp in m
+                
+            Vintage : int
+                Year of Construction
+                
+            Vmpo : float
+                Voltage at maximum power point [V]
+                
+            Voco : float
+                Open circuit voltage [V]
+                
+            celltype : str
+                Value is one of ‘monoSi’, ‘multiSi’, ‘polySi’, ‘cis’, ‘cigs’, ‘cdte’, ‘amorphous’
+                
+            gamma_pmp : float
+                Temperature coefficient of power at maximum point point [%/C]
+                
+"""
 #======Module Parameters=======================================================
 # #ar=0.14
+module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8, 
+          "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, "Aisc": 0.0010, "Bvoco": -0.0158, 
+          "gamma_pmp": -0.3792, "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439, 
+          "A4": 0.00002219}
+# =============================================================================
+
+"""
 module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8, 
           "Parallel_Strings": 2, "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, 
           "Aisc": 0.0010, "Bvoco": -0.0158, "Bvmpo": -0.01608, "gamma_pmp": -0.3792, 
           "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439, "A4": 0.00002219}
-# =============================================================================
+"""
 
 "_____________Data Imports_____________"
 

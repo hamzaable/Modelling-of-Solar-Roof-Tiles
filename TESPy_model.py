@@ -525,7 +525,7 @@ class SDP_sucking():
                 }
                 )
                 if i > 0:
-                    print('Pr von', Valve_name.format(str(i)), 'zu', Valve_name.format(str(i+1)), 'in Pa:', (((p_ref_Valve0 - comp.pr.val)*-1)*100000).round(2))
+                    print('Pr from', Valve_name.format(str(i)), 'to', Valve_name.format(str(i+1)), 'in [Pa]:', (((p_ref_Valve0 - comp.pr.val)*-1)*100000).round(2))
                 i=i+1
                 
         P_Valve=pd.DataFrame(p_Valve) 

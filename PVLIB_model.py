@@ -77,6 +77,7 @@ class Photovoltaic():
                       
             
             #Estimates parameters for the CEC single diode model (SDM) using the SAM SDK
+            #For Details on the single module specs see module definition in SDP.py 
             self.mp_fit_cec_sam = pvlib.ivtools.sdm.fit_cec_sam(
                 self.module['celltype'], 
                 v_mp=self.module['Vmpo'], 

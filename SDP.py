@@ -98,13 +98,6 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
           "A4": 0.00002219}
 # =============================================================================
 
-"""
-module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8, 
-          "Parallel_Strings": 2, "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, 
-          "Aisc": 0.0010, "Bvoco": -0.0158, "Bvmpo": -0.01608, "gamma_pmp": -0.3792, 
-          "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439, "A4": 0.00002219}
-"""
-
 "_____________Data Imports_____________"
 
 dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
@@ -153,7 +146,7 @@ mass_flow_loss.insert(0, 'undichtigkeit', first_c)
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
 num_sdp_parallel = 16   #Changed from 38 to 1 for test purpose
 ks_SRT = 0.00007          #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
-p_amb=1.01325           #Atmospheric pressure in Bar
+p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
 #####

@@ -125,8 +125,11 @@ class sdp_subsys(Subsystem):
                                                  self.comps['merge_' + j],
                                                  'in1')
             
+            # assign value for mass flow loss in each connection. 
+            # This is done for modelling the Pressure Drop within the SRT system
+            
             if self.m_loss is not None:
-                if isinstance(self.m_loss, pd.DataFrame):
+                if isinstance(self.m_loss, pd.DataFrame):                       # If multiple values for the leakage massflows are given, they are assigned accordingly for each Connection 
                    self.conns['sova_' + j] = Connection(
                         self.comps['source_' + j],
                         'out1',
@@ -137,7 +140,7 @@ class sdp_subsys(Subsystem):
                         fluid={'air': 1},
                         m=self.m_loss.iloc[i][1])
                 else:
-                    self.conns['sova_' + j] = Connection(
+                    self.conns['sova_' + j] = Connection(                       # If there is a single value given for the leakage mass flow, it will be assigned for each Connection
                         self.comps['source_' + j],
                         'out1',
                         self.comps['valve_' + j],
@@ -147,7 +150,7 @@ class sdp_subsys(Subsystem):
                         fluid={'air': 1},
                         m=self.m_loss)
             else:
-                self.conns['sova_' + j] = Connection(
+                self.conns['sova_' + j] = Connection(                           # If m_loss is None m0 will be assigned for each connection 
                     self.comps['source_' + j],
                     'out1',
                     self.comps['valve_' + j],
@@ -155,7 +158,7 @@ class sdp_subsys(Subsystem):
                     p=self.p_amb,
                     T=self.Tamb,
                     fluid={'air': 1},
-                    m0=0.0001)
+                    m0=0.0001)                                                  # Starting value specification for mass flow 
                 
             self.conns['vame_' + j] = Connection(
                 self.comps['valve_' + j],
@@ -506,31 +509,36 @@ class SDP_sucking():
     def plot_temperature_curve(self, 
                                p_amb):
         
-        Valve_name = "Valve {}"
+        """
+        Calculates & plots the pressure Drop within the SRT String 
+        
+        """
+        
+        Valve_name = "Valve {}"                                                 # Creating variable for iterating through Valves 1 - 12 
         i = 0
         p_Valve = []
         for comp in self.nw.comps['object']:
             if isinstance(comp, Valve):
                 
                 if i == 0:
-                    p_ref_Valve0 = comp.pr.val
-                    print('\nPressure in Valve 1 (reference pressure of the system) in Bar:', comp.pr.val.round(8),
+                    p_ref_Valve0 = comp.pr.val                                  # The pressure within valve 1 is taken as the reference pressure for the pressure drop calculation within the SRT String
+                    print('\nPressure in Valve 1 (reference pressure of the system) in Bar:', comp.pr.val.round(8),     # Extracting pressure value from components bin within the network. Extracted is the Pressure in Bar for Valve 1
                           '\nCumulative (!!) pressure loss for the SRT string in Pa:\n')
                                     
-                p_Valve.append(
+                p_Valve.append(                                                 # Append the list for technical values for the Valves
                 {
-                    'Valve': Valve_name.format(str(i+1)),
-                    'Pressure [bar]': comp.pr.val,
-                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000
+                    'Valve': Valve_name.format(str(i+1)),                       # Valve label  and pressure difference [Pa]
+                    'Pressure [bar]': comp.pr.val,                              # Pressure within Valve [bar]
+                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000    #Pressure Difference [Pa] of Valve x compared to the pressure in Valve 1. Negative because of a loss of pressure in the system. 
                 }
                 )
                 if i > 0:
-                    print('Pr from', Valve_name.format(str(i)), 'to', Valve_name.format(str(i+1)), 'in [Pa]:', (((p_ref_Valve0 - comp.pr.val)*-1)*100000).round(2))
+                    print('Pr from', Valve_name.format(str(i)), 'to', Valve_name.format(str(i+1)), 'in [Pa]:', (((p_ref_Valve0 - comp.pr.val)*-1)*100000).round(2)) #Print pressure Drop from each Valve to the next Valve.
                 i=i+1
                 
-        P_Valve=pd.DataFrame(p_Valve) 
+        P_Valve=pd.DataFrame(p_Valve)                                           # Save results in DataFrame
         
-        fig, ax = plt.subplots(figsize=(8,5), sharex=True)
+        fig, ax = plt.subplots(figsize=(8,5), sharex=True)                      # Plotting results
 
         ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='red', label='Pressure [bar]')
         ax.set_xlabel("Valve", fontsize=14)

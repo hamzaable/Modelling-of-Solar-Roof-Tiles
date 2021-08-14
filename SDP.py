@@ -102,8 +102,9 @@ totalPowerDiff = 0
 
 
 
-for i in tqdm(pv_data.index[8:60]):
-# for i in tqdm(pv_data.index[1:8760]):
+# for i in tqdm(pv_data.index[8:60]):
+# for i in tqdm(pv_data.index[1:4350]):
+for i in tqdm(pv_data.index[1:8760]):
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -164,8 +165,11 @@ for i in tqdm(pv_data.index[8:60]):
     # Step 4
     T_PV_Temp_Model = float(initCellTemperature.tcell)
     t_avg = (T_PV_Temp_Model + t_out) / 2
+
+    t_m = ( temp_amb + t_out ) / 2
+
     # Step 5 residue to perform ite
-    t_avg_new = t_avg
+    t_avg_new = ( t_avg + t_m ) / 2
     Residue = t_avg_new - t_out
 
 

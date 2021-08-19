@@ -16,7 +16,7 @@
     ],
     "T_unit": "C",
     "x_unit": "-",
-    "v_unit": "m3 / s",
+    "v_unit": "m3 / h",
     "s_unit": "J / kgK",
     "fluids": {
         "air": "HEOS"

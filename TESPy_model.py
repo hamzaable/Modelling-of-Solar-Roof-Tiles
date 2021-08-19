@@ -316,7 +316,7 @@ class SDP_sucking():
         self.nw = Network(fluids=fluid_list,
                           p_unit='bar',
                           T_unit='C',
-                          v_unit='m3 / h',
+                          v_unit='m3 / s',
                           m_range=[0.0001, 11],
                           p_range=[0.9, 1.02],
                           h_range=[0, 100000],

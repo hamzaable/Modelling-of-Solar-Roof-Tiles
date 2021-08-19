@@ -145,7 +145,7 @@ mass_flow_loss.insert(0, 'undichtigkeit', first_c)
 
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
 num_sdp_parallel = 16   #Changed from 38 to 1 for test purpose
-ks_SRT = 0.00007          #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+ks_SRT = 0.0004        #ks/roughness value for one SRT, used in design mode to calculate the pressure drop 
 p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
@@ -166,7 +166,7 @@ sdp.init_sdp(ambient_temp=-4,
 "_____________Calculations____________"
 
 ######
-# Electrical Yeild
+# Electrical Yield
 ######
 
 dfMainElec = []
@@ -176,7 +176,7 @@ dfThermalMain = []
 dfThermalSub = []
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
-for i in pv_data.index[3599:3623]:      #3599:3767 --> One week in June
+for i in pv_data.index[0:8760]:      #3599:3767 --> One week in June
     print('Loop number : ' + str(i))
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]

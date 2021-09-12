@@ -26,21 +26,76 @@ timezone = 'Etc/GMT+2'
 
 "______Photovoltaic Parameters_________"
 
-albedo = 0.20  # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Photovoltaik S.52
-a_r = 0.14  # Spectral Corrections factor for different module glasses
-irrad_model = 'haydavies'  # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
-m_azimut = 180  # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
-m_tilt = 45  # Module tilt (Neigung) [°]
+albedo = 0.20               # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Photovoltaik S.52
+a_r = 0.14                  # Spectral Corrections factor for different module glasses
+irrad_model= 'haydavies'    # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
+m_azimut = 180              # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+m_tilt = 45     	        # Module tilt (Neigung) [°]
 
-# ======Module Parameters=======================================================
+"""
+        The module dict defined below is important for effective irradiance 
+        calculations as well as the fitting of the IV-Curve via the fit-CEC-SAM 
+        function, which results are used to calculate the PV-power output via 
+        the single-diod-model. Within the module dict follwing specs can be 
+        defined by the user:
+        Specs:
+        -----------
+            A0 : float
+                Airmass coefficient a0
+            A1 : float
+                Airmass coefficient a1
+            A2 : float
+                Airmass coefficient a2
+            A3 : float
+                Airmass coefficient a3
+            A4 : float
+                Airmass coefficient a4
+            Aisc : float
+                Temperature coefficient of short circuit current [A/C]
+            Area : float
+                Area of one cell [sqm]
+                
+            Bvoco : float
+                Temperature coefficient of open circuit voltage [V/C]
+            
+            Cells_in_Series : int
+                Number of cells in series [-]
+                
+            Impo : float
+                Current at maximum power point [A]
+                
+            Isco : float
+                Short circuit current [A]
+                
+            Material : str
+                the length (or height) of the sdp in m
+                
+            Vintage : int
+                Year of Construction
+                
+            Vmpo : float
+                Voltage at maximum power point [V]
+                
+            Voco : float
+                Open circuit voltage [V]
+                
+            celltype : str
+                Value is one of ‘monoSi’, ‘multiSi’, ‘polySi’, ‘cis’, ‘cigs’, ‘cdte’, ‘amorphous’
+                
+            gamma_pmp : float
+                Temperature coefficient of power at maximum point point [%/C]
+                
+"""
+#======Module Parameters=======================================================
 # #ar=0.14
-module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8,
-          "Parallel_Strings": 2, "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568,
-          "Aisc": 0.0010, "Bvoco": -0.0158, "Bvmpo": -0.01608, "gamma_pmp": -0.3792,
-          "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439, "A4": 0.00002219}
+module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8, 
+          "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, "Aisc": 0.0010, "Bvoco": -0.0158, 
+          "gamma_pmp": -0.3792, "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439, 
+          "A4": 0.00002219}
 # =============================================================================
 
 "_____________Data Imports_____________"
+"Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
 
 dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
@@ -48,7 +103,7 @@ pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
                                                       "temp_air",
                                                       "wind_speed", "pressure"])
-# Assign Headers to pv_data Dataframe
+"__________Assign Headers to pv_data Dataframe________________"
 
 pv_data["DateTimeIndex"] = dwd_data.date
 pv_data["DateTimeIndex"] = pd.to_datetime(pv_data["DateTimeIndex"])
@@ -59,52 +114,72 @@ pv_data["temp_air"] = dwd_data.temp
 pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
 
-house_data_read = pd.read_excel(r'house_demand.xlsx')  # Hourly house demand (elec_cons , thermal_cons)
+"________Hourly house demand (elec_cons , thermal_cons)________"
+house_data_read = pd.read_excel(r'house_demand.xlsx')
 house_data = pd.DataFrame(index=house_data_read.index, columns=["elec_cons", "thermal_cons"])
 
-# Assign Headers to pv_data Dataframe
+"_____________Assign Headers to pv_data Dataframe______________"
 house_data["DateTimeIndex"] = house_data_read.date
 house_data["DateTimeIndex"] = pd.to_datetime(house_data["DateTimeIndex"])
 house_data["elec_cons"] = house_data_read.elec_cons
 house_data["thermal_cons"] = house_data_read.thermal_cons
 
-"______TESPy Model Parameters_________"
-num_sdp_series = 12  # Changed from 12 to 2 for test purpose
-num_sdp_parallel = 16  ##Changed from 38 to 1 for test purpose   => 16
+"______MassFlow Loss Import_________"
 
+#Import Mass flow loss table
+mass_flow_loss = pd.read_excel(r'CFD_Daten_July.xlsx', sheet_name=1)                                    # mass flow losses for each SRT string in [kg/s]
+mass_flow_loss = mass_flow_loss.drop(['position', 'Massenstrom_[kg/s]'], axis=1)                        # Erase unnecessary columns
+mass_flow_loss = mass_flow_loss.dropna()                                                                # Erase Row with Nan values
+mass_flow_loss = mass_flow_loss.reset_index(drop=True)                                                  # Reset index
+mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine_first(mass_flow_loss)  # Divide through factor 1.3
+first_c = mass_flow_loss.pop('undichtigkeit')                                                           # Reassemble Dataframe
+mass_flow_loss.insert(0, 'undichtigkeit', first_c)
+
+# mass_flow_loss = 0.001
+# mass_flow_loss = None
+                                              
+"______TESPy Model Parameters_________"
+
+num_sdp_series = 12     #Changed from 12 to 2 for test purpose
+num_sdp_parallel = 16   #Changed from 38 to 1 for test purpose
+ks_SRT = 0.0004        #ks/roughness value for one SRT, used in design mode to calculate the pressure drop 
+p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
 #####
 sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
-                  sdp_in_series=num_sdp_series)
+                  sdp_in_series=num_sdp_series,
+                  #ks=ks
+                  )
 
 sdp.init_sdp(ambient_temp=-4,
              absorption_incl=300,
              inlet_temp=-4,
              mass_flow=1,
-             # zeta=890,
-             m_loss=0.001,
+             #zeta=4e6,
+             m_loss=mass_flow_loss,
              print_res=False)
 
 "_____________Calculations____________"
+"_____________Electrical Yield____________"
 
 ######
-# Electrical Yeild
+# Electrical Yield
 ######
 
-dfMainElec = []
-dfMainElecNew = []
-dfSubElec = []
-dfSubElec_New = []
-dfThermalMain = []
-dfThermalSub = []
+dfMainElec = [] #overall electrical results
+dfMainElecNew = [] # overall results with cooling effect
+dfSubElec = [] # Row result
+dfSubElec_New = [] # Row Result with cooling effect
+dfThermalMain = [] #Thermal Results
+dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
+for i in tqdm(pv_data.index[8:10]):
 
-
-# for i in tqdm(pv_data.index[8:60]):
-# for i in tqdm(pv_data.index[1:4350]):
-for i in tqdm(pv_data.index[1:8760]):
+    "_______Looping through excel rows_______"
+    "Aiigning excel row values to variable"
+    
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -113,7 +188,7 @@ for i in tqdm(pv_data.index[1:8760]):
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
 
-# Cooling Effect Calculations Start from here
+    "______Getting the initial cell temperature______"
     initCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
                                           m_azimut=m_azimut, m_tilt=m_tilt,
                                           time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
@@ -123,21 +198,20 @@ for i in tqdm(pv_data.index[1:8760]):
                                           temp_avg=pv_data.temp_air[i])
 
 
-    # This electrical_yield is just for comparing power with and without cooling effect otherwise it has no use
-    electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
-                                    m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series * num_sdp_parallel,
-                                    time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                    dhi=pv_data.dhi[i],
+    "________Finding the electrical yield based in initial cell temperature_______"
+    electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
+                                    m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
+                                    time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                    temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                    pressure=pv_data.pressure[i],cell_temp=initCellTemperature.tcell)
-
-    # Making an Array of results got from electrical_yield
+                                    temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i],cell_temp=initCellTemperature.tcell)
+                                     
+    "_______Making an Array of results got from electrical_yieldcmd_______"
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
                  int(electrical_yield.effective_irradiance)]
-
-    P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel)
+    "_______Electrical Yield for one cell_____"
+    P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel) #Anual Energy / total modules
     effective_Iradiance = dfSubElec[4]
+    "______Overall per unit area____"
     E_sdp_New = (0.93 * (effective_Iradiance * module['Area']) - (P_MP)) / module['Area']
 
     if E_sdp_New == 0:
@@ -151,48 +225,62 @@ for i in tqdm(pv_data.index[1:8760]):
         m_out_init = 0
 
     else:
+        "_______SDP Calculations to find t_out, fan in , mass flow out"
         t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_New,
             inlet_temp=pv_data.temp_air[i],
             mass_flow=1,
-            print_res=False)
+            print_res=False,
+            ks_SRT=ks_SRT,
+            )
 
 
 
-    # Step 3
     t_out = t_out_init
-    # Step 4
+    "____Finding Avg temperature for cooling effect_____"
+    
     T_PV_Temp_Model = float(initCellTemperature.tcell)
-    t_avg = (T_PV_Temp_Model + t_out) / 2
+
+  #  t_avg = (T_PV_Temp_Model + t_out) / 2
 
     t_m = ( temp_amb + t_out ) / 2
 
-    # Step 5 residue to perform ite
-    t_avg_new = ( t_avg + t_m ) / 2
+    t_avg_new = (T_PV_Temp_Model + t_m ) / 2
+
     Residue = t_avg_new - t_out
 
 
-    # while Residue > 0.25:
-    #     # totalLoops = totalLoops + 1
-    #     newCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
-    #                                          m_azimut=m_azimut, m_tilt=m_tilt,
-    #                                          time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-    #                                          dhi=pv_data.dhi[i],
-    #                                          albedo=albedo, irrad_model=irrad_model,
-    #                                          wind_amb=pv_data.wind_speed[i],
-    #                                          temp_avg=t_avg_new)
-    #
-    #     t_avg_old = t_avg_new
-    #     t_avg_new = (float(newCellTemperature.tcell) + t_out) / 2
-    #     Residue = t_avg_new - t_avg_old
-    #     # print(f'new residual {round(Residue, 4)}')
-    #     if Residue < 0.25:
-    #         break
+    while Residue > 0.25:
+        # totalLoops = totalLoops + 1
+        newCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
+                                             m_azimut=m_azimut, m_tilt=m_tilt,
+                                             time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                             dhi=pv_data.dhi[i],
+                                             albedo=albedo, irrad_model=irrad_model,
+                                             wind_amb=pv_data.wind_speed[i],
+                                             temp_avg=t_avg_new)
+
+     
+
+    
+        t_avg_old = t_avg_new
+
+        t_m = (temp_amb + t_out) / 2
+        t_avg_new = (T_PV_Temp_Model + t_m) / 2
+        
+
+        Residue = t_avg_new - t_avg_old
+        
+        
+        if Residue < 0.25:
+ 
+            
+            break
 
     # print("total small loops = {}".format(totalLoops))
 
-    # This electrical_yield_new is using ambiant temp found from cooling effect above
+    "________This electrical_yield_new is using cell temperature found from cooling effect above________"
     electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                         m_azimut=m_azimut, m_tilt=m_tilt,
                                         module_number=num_sdp_series * num_sdp_parallel,
@@ -207,6 +295,8 @@ for i in tqdm(pv_data.index[1:8760]):
 
     P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
     effective_Iradiance_New = dfSubElec_New[4]
+    
+    # It will be lower for cooling
     E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
 
     if E_sdp_Cooling == 0:
@@ -225,15 +315,14 @@ for i in tqdm(pv_data.index[1:8760]):
             absorption_incl=E_sdp_Cooling,
             inlet_temp=pv_data.temp_air[i],
             mass_flow=1,
+            ks_SRT=ks_SRT,
             print_res=False)
 
 
-
+    "________Find power diffeence________"
     powerDiff = P_MP_New - P_MP
     totalPowerDiff = powerDiff + totalPowerDiff
-    # Step 6 New E_SDP
-    # E_sdp_New = (0.93 * (effective_Iradiance * module['Area']) - (P_MP_New)) / module['Area']
-    # End of all steps
+
 
     p_fan = p_fan_init
     m_out = m_out_init
@@ -253,6 +342,7 @@ for i in tqdm(pv_data.index[1:8760]):
     elif (elec_parameter is True) and (thermal_parameter is False):
         status = "Increase Thermal Production (increase fan_power)"
 
+
     elif (elec_parameter is False) and (thermal_parameter is True):
         status = "Decrease Thermal Production (reduce fan_power)"
 
@@ -266,6 +356,7 @@ for i in tqdm(pv_data.index[1:8760]):
     dfMainElec.append(dfSubElec)
     dfMainElecNew.append(dfSubElec_New)
 
+"_________Saving results in excel_____________"
 column_values_elec = ["Index", "Time", "Tamb [°C]", "Power [W]", "Effective Irradiance [W/m^2]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
@@ -274,15 +365,13 @@ electrical_data_New.loc['Total'] = electrical_data_New.select_dtypes(np.number).
 pd.set_option('display.max_colwidth', 40)
 electrical_data_New.to_excel(r'ResultsWithCoolingEffect.xlsx')
 
-# For Without Cooling Effect
+
 electrical_data = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
 electrical_data.fillna(0)  # fill empty rows with 0
 electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
 pd.set_option('display.max_colwidth', 40)
 electrical_data.to_excel(r'ResultsWithoutCoolingEffect.xlsx')
 
-
-# electrical_data.to_excel(r'Electrical_Yield_Single_Diod_Model.xlsx')
 
 column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out", "HeatFlux", "status",
                  "Elec_demand_met", "Heat_demand_met"]

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-
+import pandas as pd
+import matplotlib.pyplot as plt
 from tespy.networks import Network
 from tespy.components import (Sink, Source, Valve, Merge,
                               Subsystem, Compressor,
@@ -87,10 +88,10 @@ class sdp_subsys(Subsystem):
             j = str(i)
 
             self.comps['merge_' + j] = Merge(label=self.label +
-                                                   '_merge_' + j)
+                                             '_merge_' + j)
 
             self.comps['sdp_' + j] = SolarCollector(label=self.label +
-                                                          '_sdp_' + j,
+                                                    '_sdp_' + j,
                                                     lkf_lin=self.lkf_lin_sdp,
                                                     lkf_quad=self.lkf_quad_sdp,
                                                     A=self.A_sdp,
@@ -101,11 +102,11 @@ class sdp_subsys(Subsystem):
                                                     ks=self.ks_sdp,
                                                     eta_opt=1)
 
-            self.comps['Valve_' + j] = Valve(label=self.label + '_Valve_' + j)
+            self.comps['valve_' + j] = Valve(label=self.label + '_Valve_' + j)
 
             if self.zeta_sdp is not None:
-                self.comps['Valve_' + j].set_attr(zeta=self.zeta_sdp)
-            self.comps['Source' + j] = Source(label=self.label + '_Source_' + j)
+                self.comps['valve_' + j].set_attr(zeta=self.zeta_sdp)
+            self.comps['source_' + j] = Source(label=self.label + '_Source_' + j)
 
     def _create_conns(self):
 
@@ -123,28 +124,44 @@ class sdp_subsys(Subsystem):
                                                  'out1',
                                                  self.comps['merge_' + j],
                                                  'in1')
+            
+            # assign value for mass flow loss in each connection. 
+            # This is done for modelling the Pressure Drop within the SRT system
+            
             if self.m_loss is not None:
-                self.conns['sova_' + j] = Connection(
-                    self.comps['Source' + j],
-                    'out1',
-                    self.comps['Valve_' + j],
-                    'in1',
-                    p=self.p_amb,
-                    T=self.Tamb,
-                    fluid={'air': 1},
-                    m=self.m_loss)
+                if isinstance(self.m_loss, pd.DataFrame):                       # If multiple values for the leakage massflows are given, they are assigned accordingly for each Connection 
+                   self.conns['sova_' + j] = Connection(
+                        self.comps['source_' + j],
+                        'out1',
+                        self.comps['valve_' + j],
+                        'in1',
+                        p=self.p_amb,
+                        T=self.Tamb,
+                        fluid={'air': 1},
+                        m=self.m_loss.iloc[i][1])
+                else:
+                    self.conns['sova_' + j] = Connection(                       # If there is a single value given for the leakage mass flow, it will be assigned for each Connection
+                        self.comps['source_' + j],
+                        'out1',
+                        self.comps['valve_' + j],
+                        'in1',
+                        p=self.p_amb,
+                        T=self.Tamb,
+                        fluid={'air': 1},
+                        m=self.m_loss)
             else:
-                self.conns['sova_' + j] = Connection(
-                    self.comps['Source' + j],
+                self.conns['sova_' + j] = Connection(                           # If m_loss is None m0 will be assigned for each connection 
+                    self.comps['source_' + j],
                     'out1',
-                    self.comps['Valve_' + j],
+                    self.comps['valve_' + j],
                     'in1',
                     p=self.p_amb,
                     T=self.Tamb,
                     fluid={'air': 1},
-                    m0=0.0001)
+                    m0=0.0001)                                                  # Starting value specification for mass flow 
+                
             self.conns['vame_' + j] = Connection(
-                self.comps['Valve_' + j],
+                self.comps['valve_' + j],
                 'out1',
                 self.comps['merge_' + j],
                 'in2',
@@ -172,30 +189,22 @@ class SDP_sucking():
         "sucking" air from the sdps and into the air-Source heat-pump.
         This TESPy model simulates each sdp in a series of sdps and thus
         includes effects of leakage and uneven temperature distribution.
-
         Parameters:
         -----------
-
             num_sdp_series : int
                 number of SDPs connected in series for the model
-
             num_sdp_parallel : int
                 number of SDPs connected in parallel for the model
-
             loss_key_figures_lin : float
                 the losses of one sdp, linearly dependent on the temperature
                 difference
-
             loss_key_figures_quad : float
                 the losses of one sdp, quadratically dependent on the
                 temperature difference
-
             width_sdp : float
                 the width of the sdp in m
-
             thickness_sdp : float
                 the thickness of the sdp in m
-
             l_sdp : float
                 the length (or height) of the sdp in m
         """
@@ -241,54 +250,42 @@ class SDP_sucking():
                  p_amb=1.01325,
                  m_loss=None,
                  zeta=None,
-                 print_res=False):
+                 print_res=True):
         """
         Initializing the TESPy simulation of the SDP. This initialization is
         stored in the folder "sdp", which is then used by the calculate_sdp
         function.
-
         Parameters:
         -----------
-
             ambient_temp : float
                 ambient temperature to calculate the losses of the sdp
-
             inlet_temp : float
                 temperature of the air at the inlet of the first sdp
-
             absorption_incl : float
                 effective global irradiation on the sdp (optical losses already
                 included!)
-
             mass_flow : float
                 mass flow of air at the point behind the fan. It will evenly be
                 devided by the model to each parallel string of sdps
-
             zeta : float
                 the zeta value of the gap between the sdps to simulate the
                 "leakage" of air, or for this model the stream of air drawn in
                 between the sdps.
-
             m_loss : float
                 the massflow of air at each "leakage" to initialize the zeta
                 value. This is to be taken with care and does not really work
                 yet, because the massflow cannot be the same for each sdp in
                 the series of sdps. It is an optional parameter - better not
                 use it for now.
-
             print_res : boolean, default = True
                 if set True, it will print out the results of the simulation
                 Set this parameter to False to suppress this.
-
         Returns:
         --------
-
             t_out : float
                 The temperature at the outlet, behind the fan.
-
             p_fan : float
                 The power of the fan needed to provide the massflow.
-
             m_out : float
                 The massflow at the outlet, behind the fan. It should be the
                 same, as what was given as mass_flow.
@@ -304,7 +301,7 @@ class SDP_sucking():
                           p_range=[0.9, 1.02],
                           h_range=[0, 100000],
                           T_range=[-10, 100],
-                          iterinfo= False )
+                          iterinfo=False)
 
         # %% components
 
@@ -379,7 +376,6 @@ class SDP_sucking():
         mode = 'design'
         self.nw.check_network()
         # self.nw.save('sdp')
-        # self.nw.solve(mode=mode)
         self.nw.solve(mode=mode)
         self.nw.save('sdp')
         if print_res:
@@ -399,37 +395,36 @@ class SDP_sucking():
                       absorption_incl,
                       inlet_temp,
                       mass_flow,
+                      ks_SRT,
                       p_amb=1.01325,
                       print_res=True):
         """
         TESPy calculation of the sdp after initialization.
-
         Parameters:
         -----------
-
             ambient_temp : float
                 ambient temperature to calculate the losses of the sdp
-
             inlet_temp : float
                 temperature of the air at the inlet of the first sdp
-
             absorption_incl : float
                 effective global irradiation on the sdp (optical losses already
                 included!)
-
             mass_flow : float
                 mass flow of air at the point behind the fan. It will evenly be
                 devided by the model to each parallel string of sdps
-
+                
+            ks_SRT: float
+                ks/roughness value for SRTs, delivered to calculate the pressure 
+                Drop over a hole String of SRTs in Off-Design mode.
+                The goal of using the ks value is to adjust the pressure drop of 
+                the SRTs in an iterative way so that they fit the more accure 
+                results for the pressure drop from the CFD modelling.
         Returns:
         --------
-
             t_out : float
                 The temperature at the outlet, behind the fan.
-
             p_fan : float
                 The power of the fan needed to provide the massflow.
-
             m_out : float
                 The massflow at the outlet, behind the fan. It should be the
                 same, as what was given as mass_flow.
@@ -444,6 +439,11 @@ class SDP_sucking():
             for comp in self.nw.comps['object']:
                 if isinstance(comp, SolarCollector):
                     comp.set_attr(E=absorption_incl)
+                    
+        if ks_SRT is not None:
+            for comp in self.nw.comps['object']:
+                if isinstance(comp, SolarCollector):
+                    comp.set_attr(ks=ks_SRT)
 
         if inlet_temp is not None:
 
@@ -474,5 +474,54 @@ class SDP_sucking():
         for comp in self.nw.comps['object']:
             if isinstance(comp, Compressor):
                 p_fan = comp.P.val * self.num_sdp_parallel
-
+                
         return t_out, p_fan, m_out
+    
+    
+    def plot_temperature_curve(self, 
+                               p_amb):
+        
+        """
+        Calculates & plots the pressure Drop within the SRT String 
+        
+        """
+        
+        Valve_name = "Valve {}"                                                 # Creating variable for iterating through Valves 1 - 12 
+        i = 0
+        p_Valve = []
+        for comp in self.nw.comps['object']:
+            if isinstance(comp, Valve):
+                
+                if i == 0:
+                    p_ref_Valve0 = comp.pr.val                                  # The pressure within valve 1 is taken as the reference pressure for the pressure drop calculation within the SRT String
+                    print('\nPressure in Valve 1 (reference pressure of the system) in Bar:', comp.pr.val.round(8),     # Extracting pressure value from components bin within the network. Extracted is the Pressure in Bar for Valve 1
+                          '\nCumulative (!!) pressure loss for the SRT string in Pa:\n')
+                                    
+                p_Valve.append(                                                 # Append the list for technical values for the Valves
+                {
+                    'Valve': Valve_name.format(str(i+1)),                       # Valve label  and pressure difference [Pa]
+                    'Pressure [bar]': comp.pr.val,                              # Pressure within Valve [bar]
+                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000    #Pressure Difference [Pa] of Valve x compared to the pressure in Valve 1. Negative because of a loss of pressure in the system. 
+                }
+                )
+                if i > 0:
+                    print('Pr from', Valve_name.format(str(i)), 'to', Valve_name.format(str(i+1)), 'in [Pa]:', (((p_ref_Valve0 - comp.pr.val)*-1)*100000).round(2)) #Print pressure Drop from each Valve to the next Valve.
+                i=i+1
+                
+        P_Valve=pd.DataFrame(p_Valve)                                           # Save results in DataFrame
+        
+        fig, ax = plt.subplots(figsize=(8,5), sharex=True)                      # Plotting results
+
+        ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='red', label='Pressure [bar]')
+        ax.set_xlabel("Valve", fontsize=14)
+        ax.set_ylabel("Pressure [bar]", fontsize=14)
+        ax2= ax.twinx()
+        ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [Pa]'], linestyle='solid', label='Pressure Difference [Pa]')
+        ax2.set_ylabel("Druckdifferenz [Pa]", fontsize=14)
+        plt.title('Pressure Drop & Pressure Difference to ambient Pressure in the Valves of the subsystem')
+        fig.legend(bbox_to_anchor=[0.875, 0.85], loc="upper right")
+        plt.gcf().autofmt_xdate() 
+         
+        
+        return P_Valve
+ 

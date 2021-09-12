@@ -175,7 +175,8 @@ dfThermalMain = [] #Thermal Results
 dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
-for i in tqdm(pv_data.index[8:10]):
+#for i in tqdm(pv_data.index[8:10]):
+for i in tqdm(pv_data.index[8:8760]):
 
     "_______Looping through excel rows_______"
     "Aiigning excel row values to variable"

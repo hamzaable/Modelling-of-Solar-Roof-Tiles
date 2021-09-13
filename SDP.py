@@ -3,7 +3,6 @@
 import pandas as pd
 import numpy as np
 
-
 from tqdm import tqdm
 
 ##########
@@ -16,7 +15,6 @@ start = "01-01-{} 00:00".format(str(2019))
 end = "31-12-{} 23:00".format(str(2019))
 naive_times = pd.date_range(start=start, end=end, freq='1h')
 
-
 "________Location Parameters___________"
 latitude = 50.9375
 longitude = 6.9603
@@ -26,11 +24,11 @@ timezone = 'Etc/GMT+2'
 
 "______Photovoltaic Parameters_________"
 
-albedo = 0.20               # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Photovoltaik S.52
-a_r = 0.14                  # Spectral Corrections factor for different module glasses
-irrad_model= 'haydavies'    # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
-m_azimut = 180              # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
-m_tilt = 45     	        # Module tilt (Neigung) [°]
+albedo = 0.20  # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Photovoltaik S.52
+a_r = 0.14  # Spectral Corrections factor for different module glasses
+irrad_model = 'haydavies'  # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
+m_azimut = 180  # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+m_tilt = 45  # Module tilt (Neigung) [°]
 
 """
         The module dict defined below is important for effective irradiance 
@@ -54,43 +52,43 @@ m_tilt = 45     	        # Module tilt (Neigung) [°]
                 Temperature coefficient of short circuit current [A/C]
             Area : float
                 Area of one cell [sqm]
-                
+
             Bvoco : float
                 Temperature coefficient of open circuit voltage [V/C]
-            
+
             Cells_in_Series : int
                 Number of cells in series [-]
-                
+
             Impo : float
                 Current at maximum power point [A]
-                
+
             Isco : float
                 Short circuit current [A]
-                
+
             Material : str
                 the length (or height) of the sdp in m
-                
+
             Vintage : int
                 Year of Construction
-                
+
             Vmpo : float
                 Voltage at maximum power point [V]
-                
+
             Voco : float
                 Open circuit voltage [V]
-                
+
             celltype : str
                 Value is one of ‘monoSi’, ‘multiSi’, ‘polySi’, ‘cis’, ‘cigs’, ‘cdte’, ‘amorphous’
-                
+
             gamma_pmp : float
                 Temperature coefficient of power at maximum point point [%/C]
-                
+
 """
-#======Module Parameters=======================================================
+# ======Module Parameters=======================================================
 # #ar=0.14
-module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8, 
-          "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, "Aisc": 0.0010, "Bvoco": -0.0158, 
-          "gamma_pmp": -0.3792, "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439, 
+module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8,
+          "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, "Aisc": 0.0010, "Bvoco": -0.0158,
+          "gamma_pmp": -0.3792, "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439,
           "A4": 0.00002219}
 # =============================================================================
 
@@ -126,23 +124,48 @@ house_data["thermal_cons"] = house_data_read.thermal_cons
 
 "______MassFlow Loss Import_________"
 
-#Import Mass flow loss table
-mass_flow_loss = pd.read_excel(r'CFD_Daten_July.xlsx', sheet_name=1)                                    # mass flow losses for each SRT string in [kg/s]
-mass_flow_loss = mass_flow_loss.drop(['position', 'Massenstrom_[kg/s]'], axis=1)                        # Erase unnecessary columns
-mass_flow_loss = mass_flow_loss.dropna()                                                                # Erase Row with Nan values
-mass_flow_loss = mass_flow_loss.reset_index(drop=True)                                                  # Reset index
-mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine_first(mass_flow_loss)  # Divide through factor 1.3
-first_c = mass_flow_loss.pop('undichtigkeit')                                                           # Reassemble Dataframe
+# Import Mass flow loss table
+mass_flow_loss = pd.read_excel(r'CFD_Daten_July.xlsx', sheet_name=1)  # mass flow losses for each SRT string in [kg/s]
+mass_flow_loss = mass_flow_loss.drop(['position', 'Massenstrom_[kg/s]'], axis=1)  # Erase unnecessary columns
+mass_flow_loss = mass_flow_loss.dropna()  # Erase Row with Nan values
+mass_flow_loss = mass_flow_loss.reset_index(drop=True)  # Reset index
+mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine_first(
+    mass_flow_loss)  # Divide through factor 1.3
+first_c = mass_flow_loss.pop('undichtigkeit')  # Reassemble Dataframe
 mass_flow_loss.insert(0, 'undichtigkeit', first_c)
+
+
+"______Import_Operating_strategies & Mass_Flow_Loss_values____________"
+
+op_strategy = pd.read_excel(r'rauhigkeit.xlsx', sheet_name='Parameter')
+op_strategy = op_strategy.drop(columns=['Einstrahlung [W/m2]', 'Umgebungstemperatur [C]', 'Windgeschwindigkeit [m/s]'])
+op_strategy = op_strategy.assign(M = "")
+op_strategy = op_strategy.rename(columns={'Unnamed: 0': 'Operating_Strategy', 'Volumemstrom [m3/h]': 'Volume_Flow_[m3/h]', 'M': 'Mass_Flow_[kg/s]'})
+
+os_name = "5_1_dp{}"                                  # Creating variable for iterating through control stretegies 1 - 6
+mass_flow_loss = pd.DataFrame({"SDP": ["SDP1", "SDP2", "SDP3", "SDP4",
+                                           "SDP5", "SDP6", "SDP7", "SDP8",
+                                           "SDP9", "SDP10", "SDP11", "SDP12"]})
+
+for i in range(len(op_strategy)):
+    m_flow_loss_temp = pd.read_excel(r'rauhigkeit.xlsx', sheet_name=os_name.format(str(i)), usecols = "A,I:J, L")
+    op_strategy.loc[i, 'Mass_Flow_[kg/s]'] = m_flow_loss_temp.iloc[12]['m_dot']
+    m_flow_loss_temp = m_flow_loss_temp.drop(range(12,28))
+    mass_flow_loss.insert(i+1, str(os_name.format(str(i))),
+                          m_flow_loss_temp["m_dot_leakage_h"] + m_flow_loss_temp["m_dot_leakage_v"])
+
+mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine_first(mass_flow_loss)
+first_c = mass_flow_loss.pop('SDP')                                                           # Reassemble Dataframe
+mass_flow_loss.insert(0, 'SDP', first_c)
 
 # mass_flow_loss = 0.001
 # mass_flow_loss = None
-                                              
+
 "______TESPy Model Parameters_________"
 
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
-num_sdp_parallel = 16   #Changed from 38 to 1 for test purpose
-ks_SRT = 0.0004        #ks/roughness value for one SRT, used in design mode to calculate the pressure drop 
+num_sdp_parallel = 12   #Changed from 38 to 1 for test purpose
+ks_SRT = 0.033      #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
 p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
@@ -179,8 +202,8 @@ totalPowerDiff = 0
 for i in tqdm(pv_data.index[8:8760]):
 
     "_______Looping through excel rows_______"
-    "Aiigning excel row values to variable"
-    
+    "Aligning excel row values to variable"
+
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -205,7 +228,7 @@ for i in tqdm(pv_data.index[8:8760]):
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                     temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i],cell_temp=initCellTemperature.tcell)
-                                     
+
     "_______Making an Array of results got from electrical_yieldcmd_______"
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
                  int(electrical_yield.effective_irradiance)]
@@ -240,7 +263,7 @@ for i in tqdm(pv_data.index[8:8760]):
 
     t_out = t_out_init
     "____Finding Avg temperature for cooling effect_____"
-    
+
     T_PV_Temp_Model = float(initCellTemperature.tcell)
 
   #  t_avg = (T_PV_Temp_Model + t_out) / 2
@@ -262,21 +285,21 @@ for i in tqdm(pv_data.index[8:8760]):
                                              wind_amb=pv_data.wind_speed[i],
                                              temp_avg=t_avg_new)
 
-     
 
-    
+
+
         t_avg_old = t_avg_new
 
         t_m = (temp_amb + t_out) / 2
         t_avg_new = (T_PV_Temp_Model + t_m) / 2
-        
+
 
         Residue = t_avg_new - t_avg_old
-        
-        
+
+
         if Residue < 0.25:
- 
-            
+
+
             break
 
     # print("total small loops = {}".format(totalLoops))
@@ -296,7 +319,7 @@ for i in tqdm(pv_data.index[8:8760]):
 
     P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
     effective_Iradiance_New = dfSubElec_New[4]
-    
+
     # It will be lower for cooling
     E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
 

@@ -138,7 +138,7 @@ class sdp_subsys(Subsystem):
                         p=self.p_amb,
                         T=self.Tamb,
                         fluid={'air': 1},
-                        m=self.m_loss.iloc[i][1])
+                        m=self.m_loss.iloc[i][2])
                 else:
                     self.conns['sova_' + j] = Connection(                       # If there is a single value given for the leakage mass flow, it will be assigned for each Connection
                         self.comps['source_' + j],
@@ -312,7 +312,7 @@ class SDP_sucking():
         # fan
         fan = Compressor('fan')
 
-        mass_flow = mass_flow / self.num_sdp_parallel
+        #mass_flow = mass_flow / self.num_sdp_parallel                         # Calculation now for one string
 
         # sdp_subsystem
         sdp_sub = sdp_subsys('sdp',
@@ -453,7 +453,7 @@ class SDP_sucking():
                     conn.set_attr(T=inlet_temp)
 
         if mass_flow is not None:
-            mass_flow = mass_flow / self.num_sdp_parallel
+            #mass_flow = mass_flow / self.num_sdp_parallel
             for conn in self.nw.conns['object']:
                 if isinstance(conn.source, Compressor):
                     conn.set_attr(m=mass_flow)

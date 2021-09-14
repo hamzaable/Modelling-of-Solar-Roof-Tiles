@@ -95,7 +95,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
 "_____________Data Imports_____________"
 "Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
 
-dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(r'704EEE00_dp0.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
@@ -123,7 +123,7 @@ house_data["elec_cons"] = house_data_read.elec_cons
 house_data["thermal_cons"] = house_data_read.thermal_cons
 
 "______MassFlow Loss Import_________"
-
+"""
 # Import Mass flow loss table
 mass_flow_loss = pd.read_excel(r'CFD_Daten_July.xlsx', sheet_name=1)  # mass flow losses for each SRT string in [kg/s]
 mass_flow_loss = mass_flow_loss.drop(['position', 'Massenstrom_[kg/s]'], axis=1)  # Erase unnecessary columns
@@ -133,7 +133,7 @@ mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine
     mass_flow_loss)  # Divide through factor 1.3
 first_c = mass_flow_loss.pop('undichtigkeit')  # Reassemble Dataframe
 mass_flow_loss.insert(0, 'undichtigkeit', first_c)
-
+"""
 
 "______Import_Operating_strategies & Mass_Flow_Loss_values____________"
 
@@ -165,7 +165,7 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
 num_sdp_parallel = 12   #Changed from 38 to 1 for test purpose
-ks_SRT = 0.033      #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+ks_SRT = 0.0000033         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
 p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
@@ -178,7 +178,7 @@ sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
 sdp.init_sdp(ambient_temp=-4,
              absorption_incl=300,
              inlet_temp=-4,
-             mass_flow=1,
+             mass_flow=op_strategy.iloc[1][2],
              #zeta=4e6,
              m_loss=mass_flow_loss,
              print_res=False)
@@ -199,7 +199,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[8:8760]):
+for i in tqdm(pv_data.index[1:8]):           #set to one week in July: 
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -254,7 +254,7 @@ for i in tqdm(pv_data.index[8:8760]):
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_New,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=1,
+            mass_flow=op_strategy.iloc[1][2],
             print_res=False,
             ks_SRT=ks_SRT,
             )
@@ -338,7 +338,7 @@ for i in tqdm(pv_data.index[8:8760]):
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_Cooling,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=1,
+            mass_flow=op_strategy.iloc[1][2],
             ks_SRT=ks_SRT,
             print_res=False)
 
@@ -411,3 +411,5 @@ complete_data = pd.merge(electrical_data_New, thermal_data)
 complete_data.to_excel(r'CompleteResult.xlsx')
 complete_data = pd.merge(electrical_data, thermal_data)
 complete_data.to_excel(r'CompleteResultWithoutCoolingEffect.xlsx')
+
+P_Valve = sdp.plot_temperature_curve(p_amb=p_amb)

@@ -165,7 +165,7 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
 num_sdp_parallel = 12   #Changed from 38 to 1 for test purpose
-ks_SRT = 0.0000033         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+ks_SRT = 1.5         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
 p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
@@ -178,7 +178,7 @@ sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
 sdp.init_sdp(ambient_temp=-4,
              absorption_incl=300,
              inlet_temp=-4,
-             mass_flow=op_strategy.iloc[1][2],
+             mass_flow=op_strategy.iloc[0][2],
              #zeta=4e6,
              m_loss=mass_flow_loss,
              print_res=False)
@@ -254,10 +254,11 @@ for i in tqdm(pv_data.index[1:8]):           #set to one week in July:
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_New,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=op_strategy.iloc[1][2],
+            mass_flow=op_strategy.iloc[0][2],
             print_res=False,
             ks_SRT=ks_SRT,
             )
+        
 
 
 
@@ -338,7 +339,7 @@ for i in tqdm(pv_data.index[1:8]):           #set to one week in July:
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_Cooling,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=op_strategy.iloc[1][2],
+            mass_flow=op_strategy.iloc[0][2],
             ks_SRT=ks_SRT,
             print_res=False)
 

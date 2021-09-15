@@ -138,7 +138,7 @@ class sdp_subsys(Subsystem):
                         p=self.p_amb,
                         T=self.Tamb,
                         fluid={'air': 1},
-                        m=self.m_loss.iloc[i][2])
+                        m=self.m_loss.iloc[i][1])
                 else:
                     self.conns['sova_' + j] = Connection(                       # If there is a single value given for the leakage mass flow, it will be assigned for each Connection
                         self.comps['source_' + j],
@@ -429,6 +429,8 @@ class SDP_sucking():
                 The massflow at the outlet, behind the fan. It should be the
                 same, as what was given as mass_flow.
         """
+        
+        print("In general this works")
 
         if ambient_temp is not None:
             for comp in self.nw.comps['object']:
@@ -441,6 +443,7 @@ class SDP_sucking():
                     comp.set_attr(E=absorption_incl)
                     
         if ks_SRT is not None:
+            print("ks srt given for resetting")
             for comp in self.nw.comps['object']:
                 if isinstance(comp, SolarCollector):
                     comp.set_attr(ks=ks_SRT)
@@ -485,7 +488,7 @@ class SDP_sucking():
         Calculates & plots the pressure Drop within the SRT String 
         
         """
-        
+                
         Valve_name = "Valve {}"                                                 # Creating variable for iterating through Valves 1 - 12 
         i = 0
         p_Valve = []

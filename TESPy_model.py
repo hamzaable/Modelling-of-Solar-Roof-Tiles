@@ -430,8 +430,7 @@ class SDP_sucking():
                 same, as what was given as mass_flow.
         """
         
-        print("In general this works")
-
+        
         if ambient_temp is not None:
             for comp in self.nw.comps['object']:
                 if isinstance(comp, SolarCollector):
@@ -443,7 +442,6 @@ class SDP_sucking():
                     comp.set_attr(E=absorption_incl)
                     
         if ks_SRT is not None:
-            print("ks srt given for resetting")
             for comp in self.nw.comps['object']:
                 if isinstance(comp, SolarCollector):
                     comp.set_attr(ks=ks_SRT)

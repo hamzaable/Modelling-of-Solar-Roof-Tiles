@@ -95,7 +95,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
 "_____________Data Imports_____________"
 "Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
 
-dwd_data = pd.read_excel(r'704EEE00_dp0.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
@@ -165,7 +165,7 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
 num_sdp_parallel = 12   #Changed from 38 to 1 for test purpose
-ks_SRT = 1.5         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+ks_SRT = 0.00025         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
 p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
@@ -199,7 +199,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[1:8]):           #set to one week in July: 
+for i in tqdm(pv_data.index[0:8784]):           #set to one year 
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"

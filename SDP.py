@@ -199,7 +199,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8784]):           #set to one year 
+for i in tqdm(pv_data.index[8:8784]):           #set to one year
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -258,23 +258,19 @@ for i in tqdm(pv_data.index[0:8784]):           #set to one year
             print_res=False,
             ks_SRT=ks_SRT,
             )
-        
-
-
 
     t_out = t_out_init
     "____Finding Avg temperature for cooling effect_____"
 
     T_PV_Temp_Model = float(initCellTemperature.tcell)
 
-  #  t_avg = (T_PV_Temp_Model + t_out) / 2
+    #  t_avg = (T_PV_Temp_Model + t_out) / 2
 
-    t_m = ( temp_amb + t_out ) / 2
+    t_m = (temp_amb + t_out) / 2
 
-    t_avg_new = (T_PV_Temp_Model + t_m ) / 2
+    t_avg_new = (T_PV_Temp_Model + t_m) / 2
 
-    Residue = t_avg_new - t_out
-
+    Residue =  T_PV_Temp_Model - t_avg_new
 
     while Residue > 0.25:
         # totalLoops = totalLoops + 1
@@ -286,68 +282,101 @@ for i in tqdm(pv_data.index[0:8784]):           #set to one year
                                              wind_amb=pv_data.wind_speed[i],
                                              temp_avg=t_avg_new)
 
-
-
-
         t_avg_old = t_avg_new
 
-        t_m = (temp_amb + t_out) / 2
+
+
+        "________This electrical_yield_new is using cell temperature found from cooling effect above________"
+        electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,
+                                            timezone=timezone,
+                                            m_azimut=m_azimut, m_tilt=m_tilt,
+                                            module_number=num_sdp_series * num_sdp_parallel,
+                                            time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+                                            dhi=pv_data.dhi[i],
+                                            albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
+                                            temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
+                                            pressure=pv_data.pressure[i], cell_temp=t_avg_new)
+
+        dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
+                         int(electrical_yield_new.effective_irradiance)]
+
+        P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
+        effective_Iradiance_New = dfSubElec_New[4]
+
+        # It will be lower for cooling
+        E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
+
+        if E_sdp_Cooling == 0:
+            # in deg Celsius
+            t_out = Tamb
+
+            # Watt
+            p_fan = 0
+
+            # kg/sec
+            m_out = 0
+
+        else:
+
+            t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
+                ambient_temp=pv_data.temp_air[i],
+                absorption_incl=E_sdp_Cooling,
+                inlet_temp=pv_data.temp_air[i],
+                mass_flow=op_strategy.iloc[0][2],
+                print_res=False,
+                ks_SRT=ks_SRT,
+            )
+
+        t_m = (temp_amb + t_out_init) / 2
         t_avg_new = (T_PV_Temp_Model + t_m) / 2
 
-
-        Residue = t_avg_new - t_avg_old
-
+        Residue =  t_avg_old - t_avg_new
 
         if Residue < 0.25:
-
-
             break
 
     # print("total small loops = {}".format(totalLoops))
 
-    "________This electrical_yield_new is using cell temperature found from cooling effect above________"
-    electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
+    # It will be lower for cooling
+    electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,
+                                        timezone=timezone,
                                         m_azimut=m_azimut, m_tilt=m_tilt,
                                         module_number=num_sdp_series * num_sdp_parallel,
                                         time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
                                         dhi=pv_data.dhi[i],
                                         albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                         temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                        pressure=pv_data.pressure[i],cell_temp=t_avg_new)
+                                        pressure=pv_data.pressure[i], cell_temp=t_avg_new)
 
     dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
                      int(electrical_yield_new.effective_irradiance)]
 
     P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
     effective_Iradiance_New = dfSubElec_New[4]
-
-    # It will be lower for cooling
-    E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
-
-    if E_sdp_Cooling == 0:
-        # in deg Celsius
-        t_out_init = Tamb
-
-        # Watt
-        p_fan_init = 0
-
-        # kg/sec
-        m_out_init = 0
-
-    else:
-        t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
-            ambient_temp=pv_data.temp_air[i],
-            absorption_incl=E_sdp_Cooling,
-            inlet_temp=pv_data.temp_air[i],
-            mass_flow=op_strategy.iloc[0][2],
-            ks_SRT=ks_SRT,
-            print_res=False)
-
+    # E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
+    #
+    # if E_sdp_Cooling == 0:
+    #     # in deg Celsius
+    #     t_out_init = Tamb
+    #
+    #     # Watt
+    #     p_fan_init = 0
+    #
+    #     # kg/sec
+    #     m_out_init = 0
+    #
+    # else:
+    #     t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
+    #         ambient_temp=pv_data.temp_air[i],
+    #         absorption_incl=E_sdp_Cooling,
+    #         inlet_temp=pv_data.temp_air[i],
+    #         mass_flow=1,
+    #         ks_SRT=ks_SRT,
+    #         print_res=False)
 
     "________Find power diffeence________"
     powerDiff = P_MP_New - P_MP
     totalPowerDiff = powerDiff + totalPowerDiff
-
 
     p_fan = p_fan_init
     m_out = m_out_init

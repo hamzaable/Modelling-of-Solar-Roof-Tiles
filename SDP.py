@@ -95,7 +95,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
 "_____________Data Imports_____________"
 "Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
 
-dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(r'704EEE00_dp0.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
@@ -199,7 +199,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8784]):           #set to one year 
+for i in tqdm(pv_data.index[0:11]):           #set to one year 
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -254,7 +254,7 @@ for i in tqdm(pv_data.index[0:8784]):           #set to one year
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_New,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=op_strategy.iloc[0][2],
+            mass_flow=op_strategy.iloc[1][2],
             print_res=False,
             ks_SRT=ks_SRT,
             )
@@ -339,7 +339,7 @@ for i in tqdm(pv_data.index[0:8784]):           #set to one year
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_Cooling,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=op_strategy.iloc[0][2],
+            mass_flow=op_strategy.iloc[1][2],
             ks_SRT=ks_SRT,
             print_res=False)
 

@@ -470,7 +470,7 @@ class SDP_sucking():
         for conn in self.nw.conns['object']:
             if isinstance(conn.source, Compressor) & isinstance(conn.target, Sink):
                 t_out = conn.T.val_SI - Temp_Units[self.nw.T_unit][0]
-                m_out = conn.m.val_SI * self.num_sdp_parallel
+                m_out = conn.m.val_SI * self.num_sdp_parallel                           
 
         for comp in self.nw.comps['object']:
             if isinstance(comp, Compressor):

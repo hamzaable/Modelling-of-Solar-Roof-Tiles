@@ -199,7 +199,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[8:8784]):           #set to one year
+for i in tqdm(pv_data.index[4922:4945]):           #set to one year
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -381,12 +381,18 @@ for i in tqdm(pv_data.index[8:8784]):           #set to one year
     p_fan = p_fan_init
     m_out = m_out_init
 
-    flux = round((m_out * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2)
-
+    flux = round((m_out * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2) # Unit is kg*K/s ? cp is missing
+    
+    #Guess for heat flux 
+    #flux = round((m_out * 1.005 * (t_out - Tamb), 2))                          kJ/s --> kW
+                
+    
     elec_parameter = (house_data.elec_cons[i] + p_fan) \
                      < (P_MP_New * num_sdp_parallel * num_sdp_series)
     thermal_parameter = (house_data.thermal_cons[i] < flux)
-
+    
+    #E_sdp_Cooling = E_sdp_Cooling
+    
     if E_sdp_Cooling == 0:
         status = "System Off"
 

@@ -28,7 +28,7 @@ albedo = 0.20  # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Ph
 a_r = 0.14  # Spectral Corrections factor for different module glasses
 irrad_model = 'haydavies'  # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
 m_azimut = 180  # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
-m_tilt = 45  # Module tilt (Neigung) [°]
+m_tilt = 39  # Module tilt (Neigung) [°]
 
 """
         The module dict defined below is important for effective irradiance 
@@ -165,7 +165,7 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 num_sdp_series = 12     #Changed from 12 to 2 for test purpose
 num_sdp_parallel = 12   #Changed from 38 to 1 for test purpose
-ks_SRT = 0.00025         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+ks_SRT = 0.000225         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
 p_amb=1.01325           #Atmospheric pressure [Bar]
 #####
 # Thermal initialization
@@ -199,7 +199,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[4922:4945]):           #set to one year
+for i in tqdm(pv_data.index[8:47]):           #set to one year
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -381,11 +381,7 @@ for i in tqdm(pv_data.index[4922:4945]):           #set to one year
     p_fan = p_fan_init
     m_out = m_out_init
 
-    flux = round((m_out * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2) # Unit is kg*K/s ? cp is missing
-    
-    #Guess for heat flux 
-    #flux = round((m_out * 1.005 * (t_out - Tamb), 2))                          kJ/s --> kW
-                
+    flux = round((m_out * 1.005 * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2) # cp_air: 1.005 kJ/kg*K, Unit is kJ/s --> kW
     
     elec_parameter = (house_data.elec_cons[i] + p_fan) \
                      < (P_MP_New * num_sdp_parallel * num_sdp_series)

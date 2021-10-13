@@ -95,7 +95,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
 "_____________Data Imports_____________"
 "Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
 
-dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
@@ -199,7 +199,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[8:47]):           #set to one year
+for i in tqdm(pv_data.index[12:48]):           #set to one year
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"

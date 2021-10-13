@@ -138,7 +138,7 @@ class sdp_subsys(Subsystem):
                         p=self.p_amb,
                         T=self.Tamb,
                         fluid={'air': 1},
-                        m=self.m_loss.iloc[i][2])
+                        m=self.m_loss.iloc[i][1])
                 else:
                     self.conns['sova_' + j] = Connection(                       # If there is a single value given for the leakage mass flow, it will be assigned for each Connection
                         self.comps['source_' + j],

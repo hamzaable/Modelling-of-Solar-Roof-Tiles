@@ -458,6 +458,13 @@ class SDP_sucking():
             for conn in self.nw.conns['object']:
                 if isinstance(conn.source, Compressor):
                     conn.set_attr(m=mass_flow)
+                    
+        # set mass flow for each in valve and specific connection to mloss
+        #count = 0
+        # for conn in self.nw.conns['object']:
+                #if isinstance(conn.xx, xx):
+                    #m=self.m_loss.iloc[i][dpx])
+                    #i +=1
 
         self.nw.save("sdp")
         # %% solving

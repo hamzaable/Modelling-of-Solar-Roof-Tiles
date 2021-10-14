@@ -163,10 +163,12 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 "______TESPy Model Parameters_________"
 
-num_sdp_series = 12     #Changed from 12 to 2 for test purpose
-num_sdp_parallel = 12   #Changed from 38 to 1 for test purpose
-ks_SRT = 0.000225         #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
-p_amb=1.01325           #Atmospheric pressure [Bar]
+num_sdp_series = 12                                                             #Changed from 12 to 2 for test purpose
+num_sdp_parallel = 12                                                           #Changed from 38 to 1 for test purpose
+ks_SRT = 0.000225                                                               #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
+p_amb=1.01325                                                                   #Atmospheric pressure [Bar]
+#mass_flow = op_strategy.iloc[0][2]
+
 #####
 # Thermal initialization
 #####
@@ -203,7 +205,7 @@ for i in tqdm(pv_data.index[12:48]):           #set to one year
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
-
+    
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -211,6 +213,11 @@ for i in tqdm(pv_data.index[12:48]):           #set to one year
     dni = pv_data.dni[i]
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
+    
+    "______Calculating ks value in dependency of the mass flow via regression______"
+    
+    # For More info see table ks_values.xlsx
+    #ks_SRT = 1*10^-5*op_strategy.iloc[0][2]^-0.778
 
     "______Getting the initial cell temperature______"
     initCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,

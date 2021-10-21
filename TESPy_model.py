@@ -12,6 +12,8 @@ from tespy.tools.logger import logging
 # from tespy.tools import logger
 from tespy.tools.helpers import TESPyComponentError
 import math
+import numpy as np
+import scipy.interpolate
 
 Temp_Units = {
     'C': [273.15, 1], 'F': [459.67, 5 / 9], 'K': [0, 1],
@@ -396,6 +398,7 @@ class SDP_sucking():
                       inlet_temp,
                       mass_flow,
                       ks_SRT,
+                      m_loss_offdesign,
                       p_amb=1.01325,
                       print_res=True):
         """
@@ -419,6 +422,10 @@ class SDP_sucking():
                 The goal of using the ks value is to adjust the pressure drop of 
                 the SRTs in an iterative way so that they fit the more accure 
                 results for the pressure drop from the CFD modelling.
+                
+            m_loss_offdesign: ...
+                ...
+                
         Returns:
         --------
             t_out : float
@@ -449,7 +456,6 @@ class SDP_sucking():
         if inlet_temp is not None:
 
             for conn in self.nw.conns['object']:
-                a = type(conn)
                 if isinstance(conn.source, Source):
                     conn.set_attr(T=inlet_temp)
 
@@ -460,12 +466,13 @@ class SDP_sucking():
                     conn.set_attr(m=mass_flow)
                     
         # set mass flow for each in valve and specific connection to mloss
-        #count = 0
-        # for conn in self.nw.conns['object']:
-                #if isinstance(conn.xx, xx):
-                    #m=self.m_loss.iloc[i][dpx])
-                    #i +=1
-
+        if m_loss_offdesign is not None:
+            conn_number = 0
+            for conn in self.nw.conns['object']:
+                    if isinstance(conn.target, Valve):
+                        conn.set_attr(m=m_loss_offdesign[0][conn_number])
+                        conn_number += 1
+                    
         self.nw.save("sdp")
         # %% solving
         mode = 'offdesign'
@@ -533,3 +540,71 @@ class SDP_sucking():
         
         return P_Valve
  
+    def interpolate_ks_mloss(self,
+                             i,
+                             op_strategy,
+                             os_name,
+                             mass_flow,
+                             mass_flow_loss,
+                             mass_flow_temp):
+        
+        """
+        function description
+        """
+        
+        mflow = [0.064616108, 0.032016786, 0.02390436, 0.015828479, 0.009407934, 0.00306056]            # range of massflow values from operationg points DP3 to DP9 in kg/s
+        ks_mflow = [0.00018, 0.000225, 0.00024, 0.000295, 0.00035, 0.0021]                              # manually estimated ks values for Operating points DP3 to DP9 [-]
+        
+        if (0.0646161 < mass_flow):
+            raise ValueError('Mass Flow value exeeds maximum value of 200 m^3/h (~ 0.0646 kg/s).')
+        elif (mass_flow < 0.00306056):    
+            raise ValueError('Mass Flow value is below minimum value of 10 m^3/h (0.00306 kg/s).')
+            
+        ks_interpolate = scipy.interpolate.interp1d(mflow, ks_mflow)
+        ks_interp = ks_interpolate(mass_flow) 
+            
+        if (0.0646161 >= mass_flow >= 0.0320168):
+            y2_str = os_name.format(str(8))
+            y1_str = os_name.format(str(0))
+            x2 = op_strategy[op_strategy['Operating_Strategy'].str.match(y2_str)].iloc[0][2]
+            x1 = op_strategy[op_strategy['Operating_Strategy'].str.match(y1_str)].iloc[0][2]
+        elif (0.0320168 > mass_flow >= 0.0239044):
+            y2_str = os_name.format(str(0))
+            y1_str = os_name.format(str(5))
+            x2 = op_strategy[op_strategy['Operating_Strategy'].str.match(y2_str)].iloc[0][2]
+            x1 = op_strategy[op_strategy['Operating_Strategy'].str.match(y1_str)].iloc[0][2]
+        elif (0.0239044 > mass_flow >= 0.0158285):
+            y2_str = os_name.format(str(5))
+            y1_str = os_name.format(str(4))
+            x2 = op_strategy[op_strategy['Operating_Strategy'].str.match(y2_str)].iloc[0][2]
+            x1 = op_strategy[op_strategy['Operating_Strategy'].str.match(y1_str)].iloc[0][2]
+        elif (0.0158285 > mass_flow >= 0.00940793):
+            y2_str = os_name.format(str(4))
+            y1_str = os_name.format(str(9))
+            x2 = op_strategy[op_strategy['Operating_Strategy'].str.match(y2_str)].iloc[0][2]
+            x1 = op_strategy[op_strategy['Operating_Strategy'].str.match(y1_str)].iloc[0][2]
+        elif (0.00940793 > mass_flow >= 0.00621843):
+            y2_str = os_name.format(str(9))
+            y1_str = os_name.format(str(7))
+            x2 = op_strategy[op_strategy['Operating_Strategy'].str.match(y2_str)].iloc[0][2]
+            x1 = op_strategy[op_strategy['Operating_Strategy'].str.match(y1_str)].iloc[0][2]
+        elif (0.00621843 > mass_flow >= 0.00306056):
+            y2_str = os_name.format(str(7))
+            y1_str = os_name.format(str(6))
+            x2 = op_strategy[op_strategy['Operating_Strategy'].str.match(y2_str)].iloc[0][2]
+            x1 = op_strategy[op_strategy['Operating_Strategy'].str.match(y1_str)].iloc[0][2]
+        else:
+            raise ValueError('Mass Flow value is below minimum value of 10 m^3/h (0.00306 kg/s).')
+            
+        mass_flow_loss_interp = []
+        for k in range(len(mass_flow_loss)):
+            y2 = mass_flow_loss[y2_str].iloc[k]
+            y1 = mass_flow_loss[y1_str].iloc[k]
+            y = round(y1 + ((y2-y1)/(x2-x1))*(mass_flow-x1), 9)     #later change in mass_flow[i]
+            mass_flow_loss_interp.append(y)
+            
+        mass_flow_loss_interp=pd.DataFrame(mass_flow_loss_interp)
+        
+        mass_flow_temp = mass_flow
+        
+        return mass_flow_loss_interp, ks_interp, mass_flow_temp

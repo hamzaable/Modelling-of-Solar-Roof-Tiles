@@ -9,6 +9,7 @@ from tqdm import tqdm
 from PVLIB_model import Photovoltaic
 from PVLIB_model import cellTemperature
 from TESPy_model import SDP_sucking
+#from TESPy_model import interpolate_ks_mloss
 
 ##########
 start = "01-01-{} 00:00".format(str(2019))
@@ -163,11 +164,17 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 "______TESPy Model Parameters_________"
 
-num_sdp_series = 12                                                             #Changed from 12 to 2 for test purpose
-num_sdp_parallel = 12                                                           #Changed from 38 to 1 for test purpose
-ks_SRT = 0.000225                                                               #ks/roughness value for one SRT, used in design mode to calculate the pressure drop
-p_amb=1.01325                                                                   #Atmospheric pressure [Bar]
-#mass_flow = op_strategy.iloc[0][2]
+num_sdp_series = 12                                                             # Changed from 12 to 2 for test purpose
+num_sdp_parallel = 12                                                           # Changed from 38 to 1 for test purpose
+ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
+p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
+mass_flow = 0.015828479                                                         # Can be one value or string (from measurement data later on)
+                                                             
+# Allowed Value range for mass flow is:
+# 0.0646 to 0.00306 kg/s
+
+mass_flow_temp = None                                                           #Can be ignored
+E_sdp_Cooling = 0
 
 #####
 # Thermal initialization
@@ -201,7 +208,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[12:48]):           #set to one year
+for i in tqdm(pv_data.index[0:24]):           
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -214,10 +221,16 @@ for i in tqdm(pv_data.index[12:48]):           #set to one year
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
     
-    "______Calculating ks value in dependency of the mass flow via regression______"
+    "______Calculating ks value in dependency of the mass flow via interpolation______"
     
-    # For More info see table ks_values.xlsx
-    #ks_SRT = 1*10^-5*op_strategy.iloc[0][2]^-0.778
+    if mass_flow_temp != mass_flow:
+        m_loss_offdesign, ks_SRT, mass_flow_temp = sdp.interpolate_ks_mloss(i=i, 
+                                                              op_strategy=op_strategy, 
+                                                              os_name=os_name, 
+                                                              mass_flow=mass_flow,
+                                                              mass_flow_loss=mass_flow_loss,
+                                                              mass_flow_temp=mass_flow_temp)
+        
 
     "______Getting the initial cell temperature______"
     initCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
@@ -261,9 +274,10 @@ for i in tqdm(pv_data.index[12:48]):           #set to one year
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_New,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=op_strategy.iloc[0][2],
+            mass_flow=mass_flow,
             print_res=False,
             ks_SRT=ks_SRT,
+            m_loss_offdesign=m_loss_offdesign,
             )
 
     t_out = t_out_init
@@ -329,9 +343,10 @@ for i in tqdm(pv_data.index[12:48]):           #set to one year
                 ambient_temp=pv_data.temp_air[i],
                 absorption_incl=E_sdp_Cooling,
                 inlet_temp=pv_data.temp_air[i],
-                mass_flow=op_strategy.iloc[0][2],
+                mass_flow=mass_flow,
                 print_res=False,
                 ks_SRT=ks_SRT,
+                m_loss_offdesign=m_loss_offdesign,
             )
 
         t_m = (temp_amb + t_out_init) / 2
@@ -379,6 +394,7 @@ for i in tqdm(pv_data.index[12:48]):           #set to one year
     #         inlet_temp=pv_data.temp_air[i],
     #         mass_flow=1,
     #         ks_SRT=ks_SRT,
+    #         m_loss_offdesign=m_loss_offdesign,
     #         print_res=False)
 
     "________Find power diffeence________"

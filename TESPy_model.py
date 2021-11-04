@@ -314,8 +314,6 @@ class SDP_sucking():
         # fan
         fan = Compressor('fan')
 
-        #mass_flow = mass_flow / self.num_sdp_parallel                         # Calculation now for one string
-
         # sdp_subsystem
         sdp_sub = sdp_subsys('sdp',
                              num_sdp_series=self.num_sdp_series,
@@ -417,14 +415,18 @@ class SDP_sucking():
                 devided by the model to each parallel string of sdps
                 
             ks_SRT: float
-                ks/roughness value for SRTs, delivered to calculate the pressure 
-                Drop over a hole String of SRTs in Off-Design mode.
-                The goal of using the ks value is to adjust the pressure drop of 
-                the SRTs in an iterative way so that they fit the more accure 
-                results for the pressure drop from the CFD modelling.
+                ks/roughness value for the SRT, delivered to simulate the pressure 
+                Drop in the system in combination with the leakage mass flow for 
+                one SRT String in Off-Design mode.The ks value is interpolated 
+                by function 'interpolate_ks_mloss'
                 
-            m_loss_offdesign: ...
-                ...
+            m_loss_offdesign: DataFrame 
+                DataFrame which contains the values for the interpolated leakage 
+                mass flow for each Valve in kg/s. The leakage mass flow in combination 
+                with the ks value of the solar collector simulates the pressure 
+                drop within one string of SRTs, and so for the whole SRT plant.
+                The values are calculated by function 'interpolate_ks_mloss'
+                
                 
         Returns:
         --------
@@ -497,42 +499,56 @@ class SDP_sucking():
                                p_amb):
         
         """
-        Calculates & plots the pressure Drop within the SRT String 
+        Calculates & plots the pressure Drop in each valve within the SRT String
+        
+        Parameters: 
+        ----------
+        p_amb: float
+        Ambient pressure
+        
+        
+        Returns:
+        -------
+        
+            P_Valve: DataFrame
+            DataFrame with values for the corresponding pressure level for each Valve in [Pa]
+            and the cumulative pressure drop for each valve in [Pa]. The reference value for
+            the pressure drop is the pressure level in the first Valve
         
         """
                 
-        Valve_name = "Valve {}"                                                 # Creating variable for iterating through Valves 1 - 12 
+        Valve_name = "Valve {}"                                                                                         # Creating variable for iterating through Valves 1 - 12 
         i = 0
         p_Valve = []
         for comp in self.nw.comps['object']:
             if isinstance(comp, Valve):
                 
                 if i == 0:
-                    p_ref_Valve0 = comp.pr.val                                  # The pressure within valve 1 is taken as the reference pressure for the pressure drop calculation within the SRT String
+                    p_ref_Valve0 = comp.pr.val                                                                          # The pressure within valve 1 is taken as the reference pressure for the pressure drop calculation within the SRT String
                     print('\nPressure in Valve 1 (reference pressure of the system) in Bar:', comp.pr.val.round(8),     # Extracting pressure value from components bin within the network. Extracted is the Pressure in Bar for Valve 1
                           '\nCumulative (!!) pressure loss for the SRT string in Pa:\n')
                                     
-                p_Valve.append(                                                 # Append the list for technical values for the Valves
+                p_Valve.append(                                                                                         # Append the list for technical values for the Valves
                 {
-                    'Valve': Valve_name.format(str(i+1)),                       # Valve label  and pressure difference [Pa]
-                    'Pressure [bar]': comp.pr.val,                              # Pressure within Valve [bar]
-                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000    #Pressure Difference [Pa] of Valve x compared to the pressure in Valve 1. Negative because of a loss of pressure in the system. 
+                    'Valve': Valve_name.format(str(i+1)),                                                               # Valve label and pressure difference [Pa]
+                    'Pressure [bar]': comp.pr.val,                                                                      # Pressure within Valve [bar]
+                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000                                #Pressure Difference [Pa] of Valve x compared to the pressure in Valve 1. Negative because of a loss of pressure in the system. 
                 }
                 )
                 if i > 0:
                     print('Pr from', Valve_name.format(str(i)), 'to', Valve_name.format(str(i+1)), 'in [Pa]:', (((p_ref_Valve0 - comp.pr.val)*-1)*100000).round(2)) #Print pressure Drop from each Valve to the next Valve.
                 i=i+1
                 
-        P_Valve=pd.DataFrame(p_Valve)                                           # Save results in DataFrame
+        P_Valve=pd.DataFrame(p_Valve)                                                                                   # Save results in DataFrame
         
-        fig, ax = plt.subplots(figsize=(8,5), sharex=True)                      # Plotting results
+        fig, ax = plt.subplots(figsize=(8,5), sharex=True)                                                              # Plotting results
 
         ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='red', label='Pressure [bar]')
         ax.set_xlabel("Valve", fontsize=14)
         ax.set_ylabel("Pressure [bar]", fontsize=14)
         ax2= ax.twinx()
         ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [Pa]'], linestyle='solid', label='Pressure Difference [Pa]')
-        ax2.set_ylabel("Druckdifferenz [Pa]", fontsize=14)
+        ax2.set_ylabel("Pressure Difference [Pa]", fontsize=14)
         plt.title('Pressure Drop & Pressure Difference to ambient Pressure in the Valves of the subsystem')
         fig.legend(bbox_to_anchor=[0.875, 0.85], loc="upper right")
         plt.gcf().autofmt_xdate() 
@@ -549,19 +565,66 @@ class SDP_sucking():
                              mass_flow_temp):
         
         """
-        function description
+        The function interpolates the ks values for each SRT (in tespy defined
+        as the component solar collector) in dependency of the given mass flow
+        via the one dimensional interpolation function from the scipy module. 
+        The same is done for the leakage mass flow values. The interpolation 
+        for the leakage mass flow is two dimensional, executed manually.
+        The values used for the interpolation are based on manually estimated 
+        values for ks in the Design mode. These values are the framework for
+        the interpolation afterwards and are stored in mflow & ks_mflow. 
+        
+        Parameters:
+        ----------
+        
+        op_strategy: DataFrame 
+            Data Frame which contains the operational strategy and the corresponding 
+            values for the mass flow delivered by the fan in kg/s and m^3/h. 
+            Important: the value for the mass flow applies for one string, not the 
+            whole SRT plant!
+            
+        os_name: str
+            spaceholder for the name of the operating strategy. Used for easier 
+            iteration
+            
+        mass_flow: float
+            mass flow for one string of SRTs in kg/s
+            
+        mass_flow_loss: DataFrame
+             Data Frame which contains the leakage mass flow for each valve. 
+             The origin of the leage values is a CFD Calculation, which provides 
+             those values for different operating strategies/operating points
+             
+        mass_flow_temp: float
+            variable with temporary stored value for the mass flow in kg/s.
+            Used to determine if the function has to be executed or not. 
+            
+            
+        Returns: 
+        -------
+
+        mass_flow_loss_interp: DataFrame
+            interpolated values for the leakage mass flow in each valve for 
+            one string
+            
+        ks_interp: float
+            interpolated value for ks in dependency of the mass flow
+            
+        mass_flow_temp: float
+            s.o.
+            
         """
         
         mflow = [0.064616108, 0.032016786, 0.02390436, 0.015828479, 0.009407934, 0.00306056]            # range of massflow values from operationg points DP3 to DP9 in kg/s
-        ks_mflow = [0.00018, 0.000225, 0.00024, 0.000295, 0.00035, 0.0021]                              # manually estimated ks values for Operating points DP3 to DP9 [-]
+        ks_mflow = [0.00018, 0.000225, 0.00024, 0.000295, 0.00035, 0.0021]                              # manually estimated ks values for Operating points DP3 to DP9 [-]. These values are the frame for interpolating ks values for the given mass flow
         
         if (0.0646161 < mass_flow):
             raise ValueError('Mass Flow value exeeds maximum value of 200 m^3/h (~ 0.0646 kg/s).')
         elif (mass_flow < 0.00306056):    
             raise ValueError('Mass Flow value is below minimum value of 10 m^3/h (0.00306 kg/s).')
             
-        ks_interpolate = scipy.interpolate.interp1d(mflow, ks_mflow)
-        ks_interp = ks_interpolate(mass_flow) 
+        ks_interpolate = scipy.interpolate.interp1d(mflow, ks_mflow)            # setting up interpolation function and parameters for scipy.interpolate.interp1d
+        ks_interp = ks_interpolate(mass_flow)                                   # interpolate ks in dependency of the mass flow
             
         if (0.0646161 >= mass_flow >= 0.0320168):
             y2_str = os_name.format(str(8))
@@ -597,10 +660,10 @@ class SDP_sucking():
             raise ValueError('Mass Flow value is below minimum value of 10 m^3/h (0.00306 kg/s).')
             
         mass_flow_loss_interp = []
-        for k in range(len(mass_flow_loss)):
+        for k in range(len(mass_flow_loss)):                                    # interpolate mass flow leakage two dimensional
             y2 = mass_flow_loss[y2_str].iloc[k]
             y1 = mass_flow_loss[y1_str].iloc[k]
-            y = round(y1 + ((y2-y1)/(x2-x1))*(mass_flow-x1), 9)     #later change in mass_flow[i]
+            y = round(y1 + ((y2-y1)/(x2-x1))*(mass_flow-x1), 9)                 # later change in mass_flow[i]
             mass_flow_loss_interp.append(y)
             
         mass_flow_loss_interp=pd.DataFrame(mass_flow_loss_interp)

@@ -215,9 +215,11 @@ class cellTemperature():
                                                                     albedo=self.albedo)
     
         # Estimating cell temperatue via Faimann Model
+        # Faiman, D. (2008). “Assessing the outdoor operating temperature of 
+        # photovoltaic modules.” Progress in Photovoltaics 16(4): 307-315.
         self.tcell = pvlib.temperature.faiman(self.total_irrad['poa_global'],
                                                     temp_avg,
                                                     wind_amb,
-                                                    u0=25.0,
-                                                    u1=6.84)
+                                                    u0=25.0,                # Combined heat loss factor coefficient [W*m^-2*C^-1]
+                                                    u1=6.84)                # Combined heat loss factor influenced by wind [W*m^-2*C^-1(m/s)]
     

@@ -305,7 +305,6 @@ for i in tqdm(pv_data.index[0:24]):
 
         t_avg_old = t_avg_new
 
-    #test für git
 
         "________This electrical_yield_new is using cell temperature found from cooling effect above________"
         electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,

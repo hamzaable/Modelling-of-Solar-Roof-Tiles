@@ -25,11 +25,11 @@ timezone = 'Etc/GMT+2'
 
 "______Photovoltaic Parameters_________"
 
-albedo = 0.20  # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Photovoltaik S.52
-a_r = 0.14  # Spectral Corrections factor for different module glasses
-irrad_model = 'haydavies'  # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
-m_azimut = 180  # Module Azimut (Ausrichtung) [°]dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
-m_tilt = 39  # Module tilt (Neigung) [°]
+albedo = 0.20                                                                   # Ground reflection albedo factor 0.20 (Beton) --> K. Mertens- Photovoltaik S.52
+a_r = 0.14                                                                      # Spectral Corrections factor for different module glasses
+irrad_model = 'haydavies'                                                       # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
+m_azimut = 180                                                                  # Module Azimut (Ausrichtung) [°]
+m_tilt = 39                                                                     # Module tilt (Neigung) [°]
 
 """
         The module dict defined below is important for effective irradiance 
@@ -106,9 +106,9 @@ pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
 
 pv_data["DateTimeIndex"] = dwd_data.date
 pv_data["DateTimeIndex"] = pd.to_datetime(pv_data["DateTimeIndex"])
-pv_data["dni"] = dwd_data.irradiance_dir
-pv_data["dhi"] = dwd_data.irradiance_diff
-pv_data["ghi"] = dwd_data.poa_global
+pv_data["dni"] = dwd_data.irradiance_dir                                        # direct Solar irradition (horizontal)
+pv_data["dhi"] = dwd_data.irradiance_diff                                       # diffuse solar radiation (horizontal)
+pv_data["ghi"] = dwd_data.poa_global                                            # global irrradiation     (horizontal)
 pv_data["temp_air"] = dwd_data.temp
 pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
@@ -143,7 +143,7 @@ op_strategy = op_strategy.drop(columns=['Einstrahlung [W/m2]', 'Umgebungstempera
 op_strategy = op_strategy.assign(M = "")
 op_strategy = op_strategy.rename(columns={'Unnamed: 0': 'Operating_Strategy', 'Volumemstrom [m3/h]': 'Volume_Flow_[m3/h]', 'M': 'Mass_Flow_[kg/s]'})
 
-os_name = "5_1_dp{}"                                  # Creating variable for iterating through control stretegies 1 - 6
+os_name = "5_1_dp{}" # Creating variable for iterating through control stretegies 
 mass_flow_loss = pd.DataFrame({"SDP": ["SDP1", "SDP2", "SDP3", "SDP4",
                                            "SDP5", "SDP6", "SDP7", "SDP8",
                                            "SDP9", "SDP10", "SDP11", "SDP12"]})
@@ -155,11 +155,11 @@ for i in range(len(op_strategy)):
     mass_flow_loss.insert(i+1, str(os_name.format(str(i))),
                           m_flow_loss_temp["m_dot_leakage_h"] + m_flow_loss_temp["m_dot_leakage_v"])
 
-mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine_first(mass_flow_loss)
-first_c = mass_flow_loss.pop('SDP')                                                           # Reassemble Dataframe
+mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine_first(mass_flow_loss)      # all values for the leakge mass flow in the valves has to be divided by 1.3 
+first_c = mass_flow_loss.pop('SDP')                                                                         # Reassemble Dataframe
 mass_flow_loss.insert(0, 'SDP', first_c)
 
-# mass_flow_loss = 0.001
+# mass_flow_loss = 0.001                                                        # assign one unitary value for the mass flow leakage in each valve
 # mass_flow_loss = None
 
 "______TESPy Model Parameters_________"
@@ -168,10 +168,10 @@ num_sdp_series = 12                                                             
 num_sdp_parallel = 12                                                           # Changed from 38 to 1 for test purpose
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
-mass_flow = 0.015828479                                                         # Can be one value or string (from measurement data later on)
+mass_flow = 0.015828479                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
                                                              
 # Allowed Value range for mass flow is:
-# 0.0646 to 0.00306 kg/s
+# 0.0646 to 0.00306 kg/s (due to interpolation boundaries)
 
 mass_flow_temp = None                                                           #Can be ignored
 E_sdp_Cooling = 0
@@ -221,7 +221,7 @@ for i in tqdm(pv_data.index[0:24]):
     dhi = pv_data.dhi[i]
     Tamb = pv_data.temp_air[i]
     
-    "______Calculating ks value in dependency of the mass flow via interpolation______"
+    "______Calculating ks value & mass flow leakage via interpolation______"
     
     if mass_flow_temp != mass_flow:
         m_loss_offdesign, ks_SRT, mass_flow_temp = sdp.interpolate_ks_mloss(i=i, 
@@ -404,6 +404,7 @@ for i in tqdm(pv_data.index[0:24]):
     p_fan = p_fan_init
     m_out = m_out_init
 
+    # Calculating the heat flux normed on one m^2 (Division through number of SRTs and their area 0.10)
     flux = round((m_out * 1.005 * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 2) # cp_air: 1.005 kJ/kg*K, Unit is kJ/s --> kW
     
     elec_parameter = (house_data.elec_cons[i] + p_fan) \

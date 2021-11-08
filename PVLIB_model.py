@@ -76,7 +76,7 @@ class Photovoltaic():
     
                     
         #Estimating cell temperatue via Faimann Model
-        self.tcell = cell_temp                                                    # Combined heat loss factor influenced by wind [(W/m^2)/(C)]
+        self.tcell = cell_temp                                              # Combined heat loss factor influenced by wind [(W/m^2)/(C)]
         
         #Estimating Angle of incidence modifier(IAM) using the Martin and Ruiz for diffuse radiation
         self.IAM_mod_diff = pvlib.iam.martin_ruiz_diffuse(

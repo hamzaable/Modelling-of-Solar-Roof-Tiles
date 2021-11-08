@@ -472,7 +472,7 @@ class SDP_sucking():
             conn_number = 0
             for conn in self.nw.conns['object']:
                     if isinstance(conn.target, Valve):
-                        conn.set_attr(m=m_loss_offdesign[0][conn_number])
+                        conn.set_attr(m=m_loss_offdesign["5_1_dpx"][conn_number])
                         conn_number += 1
                     
         self.nw.save("sdp")
@@ -532,7 +532,7 @@ class SDP_sucking():
                 {
                     'Valve': Valve_name.format(str(i+1)),                                                               # Valve label and pressure difference [Pa]
                     'Pressure [bar]': comp.pr.val,                                                                      # Pressure within Valve [bar]
-                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000                                #Pressure Difference [Pa] of Valve x compared to the pressure in Valve 1. Negative because of a loss of pressure in the system. 
+                    'Pressure Difference [Pa]': ((p_ref_Valve0 - comp.pr.val)*-1)*100000                                # Pressure Difference [Pa] of Valve x compared to the pressure in Valve 1. Negative because of a loss of pressure in the system. 
                 }
                 )
                 if i > 0:
@@ -615,8 +615,8 @@ class SDP_sucking():
             
         """
         
-        mflow = [0.064616108, 0.032016786, 0.02390436, 0.015828479, 0.009407934, 0.00306056]            # range of massflow values from operationg points DP3 to DP9 in kg/s
-        ks_mflow = [0.00018, 0.000225, 0.00024, 0.000295, 0.00035, 0.0021]                              # manually estimated ks values for Operating points DP3 to DP9 [-]. These values are the frame for interpolating ks values for the given mass flow
+        mflow = [0.064616108, 0.032016786, 0.02390436, 0.015828479, 0.009407934, 0.00621843, 0.00306056]            # range of massflow values from operationg points DP3 to DP9 in kg/s
+        ks_mflow = [0.000200, 0.000240, 0.000260, 0.000350, 0.000475, 0.000640, 0.000895]                              # manually estimated ks values for Operating points DP3 to DP9 [-]. These values are the frame for interpolating ks values for the given mass flow
         
         if (0.0646161 < mass_flow):
             raise ValueError('Mass Flow value exeeds maximum value of 200 m^3/h (~ 0.0646 kg/s).')

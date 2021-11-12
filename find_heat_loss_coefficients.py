@@ -15,19 +15,19 @@ F_ta_en = tau * alpha                                                           
 
 # function definition
 def func(x, c1, c2):
-    return  F_ta_en * G - c1*x - c2*np.power(x, 2)                              #F_ta_en * G - c1*x - c2*x^2
+    return  F_ta_en * G - c1*x - c2*np.power(x, 2)                              # F_ta_en * G - c1*x - c2*x^2: See formula from Energiekonzept Documentation
 
-# Input Data
-G = np.array([100, 250, 350, 500])
-ta_2ms = np.array([8, 10, 12.5, 15])
-tm = np.array([10, 13.5, 15, 17.5])
-dt = np.subtract(tm, ta_2ms)
+# Input Data (later on with imported measurement values)
+G = np.array([100, 250, 350, 500])                                              # Global Irradiance on collector surface (W/m^2)      
+ta_2ms = np.array([8, 10, 12.5, 15])                                            # Ambient temperature at wind speed x (°C)
+tm = np.array([10, 13.5, 15, 17.5])                                             # module temperature (°C)
+dt = np.subtract(tm, ta_2ms)                                                    # delta t (°C)
 
 # Data Points
-yData = np.zeros(len(dt))
+yData = np.zeros(len(dt))                                                       # All zero because: P_out = 0 to simulate collector temperature in balance of losses and gains through solar irradiation
 
 #Solve
-InitialGuess = [1.0, 1.0]
+InitialGuess = [1.0, 1.0]                                                       # initial guess necessary for the solver
 coeff, pcov = curve_fit(func, dt, yData, InitialGuess)
 
 print('Heat loss Coefficients:\n\nc1: ', round(coeff[0], 2), '(W/m*K)\nc2: ', round(coeff[1], 2), '(W/m*K^2)')

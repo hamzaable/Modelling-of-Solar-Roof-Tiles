@@ -188,7 +188,7 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 num_sdp_series = 12                                                             # Changed from 12 to 2 for test purpose
 num_sdp_parallel = 12                                                           # Changed from 38 to 1 for test purpose
-                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
+                                                                                # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
 mass_flow = 0.0320168                                                           # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
                                                              

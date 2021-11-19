@@ -6,19 +6,19 @@ Created on Fri Nov 12 12:55:55 2021
 """
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+import seaborn as sns
 import numpy as np
 import pandas as pd
 import os
-#import time
-import datetime as dt
-import math
 
 # Path handling
 # Print the current working directory
 print("Current working directory: {0}".format(os.getcwd()))
-project_path = 'C:/Users/mariu/Documents/GitHub/Modelling_of_Solar_Roof_Tiles/Modelling-of-Solar-Roof-Tile'
-# Change the current working directory
-os.chdir(project_path)
+#Change Path of directory manually
+#project_path = 'C:/Users/mariu/Documents/GitHub/Modelling_of_Solar_Roof_Tiles/Modelling-of-Solar-Roof-Tile'
+#os.chdir(project_path)
+# Change the current working directory automaticly
+os.chdir(os.path.abspath('find_heat_loss_coefficients.py'))
 print("\nChanged working directory to:\n {0}".format(os.getcwd()))
 
 
@@ -79,7 +79,7 @@ dt = np.subtract(tm, ta_2ms)                                                    
 # Data Points
 yData = np.zeros(len(dt))                                                       # All zero because: P_out = 0 to simulate collector temperature in balance of losses and gains through solar irradiation
 
-#Solve
+# Solve
 InitialGuess = [1.0, 1.0]                                                       # initial guess necessary for the solver
 coeff, pcov = curve_fit(func, dt, yData, InitialGuess)
 
@@ -88,16 +88,22 @@ print('Heat loss Coefficients:\n\nc1: ', round(coeff[0], 2), '(W/m*K)\nc2: ', ro
 #Curve Fitting and Plotting - Not working yet
 """
 n = len(dt)
-y = np.empty(len(dt)) 
+y = np.empty(len(dt))
+c1 = np.full(n, coeff[0])
+c2 = np.full(n, coeff[1])
+F_ta_en_arr = np.full(n, F_ta_en)
+
 for i in range(n) :
-    y[i] = func(G[i], coeff[0], coeff[1])
+    y[i] =   func(G[i], c1[i], c2[i])                                                                     
+    
     
 # function set to tm = ...
 # y[i] = (math.sqrt((coeff[0]^2)+4*coeff[1]*F_ta_en*G[i])-coeff[0]+(2*coeff[1]*ta_2ms[i]))/(2*coeff[1])
 """
 
-plt.plot(G, tm, 'k.')
-plt.xlabel('Einstrahlung (W/m^2)')
+plt.figure()
+ax = sns.regplot(x=G, y=tm)
+plt.xlabel('Einstrahlung (W/m2)')
 plt.ylabel('Modutemperatur (°C)')
 plt.title('Measurement values of Module Temperature over different Irradiances')
 

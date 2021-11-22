@@ -10,15 +10,16 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import os
+import math
 
 # Path handling
 # Print the current working directory
 print("Current working directory: {0}".format(os.getcwd()))
 #Change Path of directory manually
-#project_path = 'C:/Users/mariu/Documents/GitHub/Modelling_of_Solar_Roof_Tiles/Modelling-of-Solar-Roof-Tile'
-#os.chdir(project_path)
+project_path = 'C:/Users/mariu/Documents/GitHub/Modelling_of_Solar_Roof_Tiles/Modelling-of-Solar-Roof-Tile'
+os.chdir(project_path)
 # Change the current working directory automaticly
-os.chdir(os.path.abspath('find_heat_loss_coefficients.py'))
+#os.chdir(os.path.abspath('find_heat_loss_coefficients.py'))
 print("\nChanged working directory to:\n {0}".format(os.getcwd()))
 
 
@@ -59,7 +60,7 @@ meta_11_11 = meta[3056:5629]                                                    
 
 meta_ws2 = meta_11_10.append(meta_11_11)                                        #merge both dataframes 
 
-meta_ws2 = meta_ws2[(meta_ws2["Windspeed m/s"] < 2.5 ) & (meta_ws2["Windspeed m/s"] > 1.5 )]    #select data with Windspeed 2 m/s +- 0,5 m/s
+meta_ws2 = meta_ws2[(meta_ws2["Windspeed m/s"] < 2.05 ) & (meta_ws2["Windspeed m/s"] > 1.95 )]    #select data with Windspeed 2 m/s +- 0,5 m/s - Originally 
 
 # Optical losses
 tau = 0.93                                                                      # reflection loss
@@ -75,6 +76,7 @@ G = np.array(meta_ws2["Global_Irradiance_W_m2"])                                
 ta_2ms = np.array(meta_ws2["Temperature ambient °C"])                           # Ambient temperature at wind speed x (°C)
 tm = np.array(meta_ws2["Temperature 1 module C53"])                             # module temperature (°C)
 dt = np.subtract(tm, ta_2ms)                                                    # delta t (°C)
+ws = np.array(meta_ws2["Windspeed m/s"])                                        # Windspeed (m/s)                
 
 # Data Points
 yData = np.zeros(len(dt))                                                       # All zero because: P_out = 0 to simulate collector temperature in balance of losses and gains through solar irradiation
@@ -83,7 +85,7 @@ yData = np.zeros(len(dt))                                                       
 InitialGuess = [1.0, 1.0]                                                       # initial guess necessary for the solver
 coeff, pcov = curve_fit(func, dt, yData, InitialGuess)
 
-print('Heat loss Coefficients:\n\nc1: ', round(coeff[0], 2), '(W/m*K)\nc2: ', round(coeff[1], 2), '(W/m*K^2)')
+print('Heat loss Coefficients via measurement data:\n\nc1: ', round(coeff[0], 2), '(W/m*K)\nc2: ', round(coeff[1], 2), '(W/m*K^2)')
 
 #Curve Fitting and Plotting - Not working yet
 """
@@ -103,9 +105,33 @@ for i in range(n) :
 
 plt.figure()
 ax = sns.regplot(x=G, y=tm)
-plt.xlabel('Einstrahlung (W/m2)')
-plt.ylabel('Modutemperatur (°C)')
+plt.xlabel('Irradiance (W/m2)')
+plt.ylabel('Module Temperature (°C)')
 plt.title('Measurement values of Module Temperature over different Irradiances')
 
+
+# Calculating module temperature + c1 & c2 via Christian Brosig's approach
+
+a = -2.98                                                                       # empirical coefficient : upper limit of module temperature at high irradiances
+b = -0.0471                                                                     # empirical coefficient : rate of sinking moduel tempeature at rising windspeed
+
+tm_sandia = np.empty(len(ta_2ms))
+
+for i in range(len(ta_2ms)) :
+    tm_sandia[i] = G[i] * (math.exp(a + (b * ws[i]))) + ta_2ms[i]               # source: Documentation energiekonzept
+    
+dt_sandia = np.subtract(tm_sandia, ta_2ms)
+
+plt.figure()
+ax = sns.regplot(x=G, y=tm_sandia)
+plt.xlabel('Irradiance (W/m2)')
+plt.ylabel('Module Temperature (°C)')
+plt.title('Calculated values for Module Temperature over different Irradiances via Sandia model')
+
+# Solve
+InitialGuess = [1.0, 1.0]                                                       # initial guess necessary for the solver
+coeff_tm_Sandia, pcov = curve_fit(func, dt_sandia, yData, InitialGuess)
+
+print('\n\nHeat loss Coefficients via module temperature by Sandia model:\n\nc1: ', round(coeff_tm_Sandia[0], 2), '(W/m*K)\nc2: ', round(coeff_tm_Sandia[1], 2), '(W/m*K^2)')
 
 

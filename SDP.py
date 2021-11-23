@@ -206,7 +206,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[3000:3120]):           
+for i in tqdm(pv_data.index[3000:3120]):
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -241,7 +241,7 @@ for i in tqdm(pv_data.index[3000:3120]):
                                           temp_avg=pv_data.temp_air[i])
 
 
-    "________Finding the electrical yield based in initial cell temperature_______"
+    "________Finding the electrical yield & Solar data based in initial cell temperature_______"
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                     m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
@@ -249,8 +249,14 @@ for i in tqdm(pv_data.index[3000:3120]):
                                     temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i],cell_temp=initCellTemperature.tcell)
 
     "_______Making an Array of results got from electrical_yieldcmd_______"
+    if int(electrical_yield.effective_irradiance) == 0 :
+        efficency = 0
+    else :
+        efficency = round((round(electrical_yield.annual_energy, 2) / (
+                num_sdp_series * num_sdp_parallel * 0.1)) * 100 / int(electrical_yield.effective_irradiance),2)
+
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
-                 int(electrical_yield.effective_irradiance)]
+                 int(electrical_yield.effective_irradiance),efficency]
     "_______Electrical Yield for one cell_____"
     P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel) #Anual Energy / total modules
     effective_Iradiance = dfSubElec[4]
@@ -292,8 +298,10 @@ for i in tqdm(pv_data.index[3000:3120]):
 
     Residue =  T_PV_Temp_Model - t_avg_new
 
-    while Residue > 0.25:
-        # totalLoops = totalLoops + 1
+    totalLoops = 0
+
+    while totalLoops < 1:
+        totalLoops = totalLoops + 1
         newCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
                                              m_azimut=m_azimut, m_tilt=m_tilt,
                                              time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
@@ -316,8 +324,13 @@ for i in tqdm(pv_data.index[3000:3120]):
                                             temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
                                             pressure=pv_data.pressure[i], cell_temp=t_avg_new)
 
+        if int(electrical_yield_new.effective_irradiance) == 0:
+            efficency_New = 0
+        else:
+            efficency_New = round((round(electrical_yield_new.annual_energy, 2)/(num_sdp_series * num_sdp_parallel*0.1))*100/int(electrical_yield_new.effective_irradiance),2)
+
         dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
-                         int(electrical_yield_new.effective_irradiance)]
+                         int(electrical_yield_new.effective_irradiance),efficency_New]
 
         P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
         effective_Iradiance_New = dfSubElec_New[4]
@@ -352,27 +365,26 @@ for i in tqdm(pv_data.index[3000:3120]):
 
         Residue =  t_avg_old - t_avg_new
 
-        if Residue < 0.25:
-            break
+
 
     # print("total small loops = {}".format(totalLoops))
 
     # It will be lower for cooling
-    electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,
-                                        timezone=timezone,
-                                        m_azimut=m_azimut, m_tilt=m_tilt,
-                                        module_number=num_sdp_series * num_sdp_parallel,
-                                        time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                        dhi=pv_data.dhi[i],
-                                        albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                        temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                        pressure=pv_data.pressure[i], cell_temp=t_avg_new)
+    # electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,
+    #                                     timezone=timezone,
+    #                                     m_azimut=m_azimut, m_tilt=m_tilt,
+    #                                     module_number=num_sdp_series * num_sdp_parallel,
+    #                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
+    #                                     dhi=pv_data.dhi[i],
+    #                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
+    #                                     temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
+    #                                     pressure=pv_data.pressure[i], cell_temp=t_avg_new)
+    #
+    # dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
+    #                  int(electrical_yield_new.effective_irradiance)]
 
-    dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
-                     int(electrical_yield_new.effective_irradiance)]
-
-    P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
-    effective_Iradiance_New = dfSubElec_New[4]
+    # P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
+    # effective_Iradiance_New = dfSubElec_New[4]
     # E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
     #
     # if E_sdp_Cooling == 0:
@@ -405,8 +417,7 @@ for i in tqdm(pv_data.index[3000:3120]):
     # Calculating the heat flux normed on one m^2 (Division through number of SRTs and their area 0.10)
     flux = round((m_out * 1.005 * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 3) # cp_air: 1.005 kJ/kg*K, Unit is kJ/s --> kW
     
-    elec_parameter = (house_data.elec_cons[i] + p_fan) \
-                     < (P_MP_New * num_sdp_parallel * num_sdp_series)
+    elec_parameter = (house_data.elec_cons[i] + p_fan) < (P_MP_New * num_sdp_parallel * num_sdp_series)
     thermal_parameter = (house_data.thermal_cons[i] < flux)
     
     #E_sdp_Cooling = E_sdp_Cooling
@@ -427,7 +438,11 @@ for i in tqdm(pv_data.index[3000:3120]):
     else:
         status = "System Off"
 
-    dfThermalSub = [i, time, Tamb, round(E_sdp_Cooling, 2), t_out, p_fan, m_out, flux, status, elec_parameter,
+    if dfSubElec[4] == 0:
+        thermal_efficency = 0
+    else:
+        thermal_efficency = round((flux * 1000*100) / dfSubElec_New[4],2)
+    dfThermalSub = [i, time, Tamb, round(E_sdp_Cooling, 2), t_out, p_fan, m_out, flux,thermal_efficency, status, elec_parameter,
                     thermal_parameter]
     dfThermalMain.append(dfThermalSub)
 
@@ -435,7 +450,7 @@ for i in tqdm(pv_data.index[3000:3120]):
     dfMainElecNew.append(dfSubElec_New)
 
 "_________Saving results in excel_____________"
-column_values_elec = ["Index", "Time", "Tamb [°C]", "Power [W]", "Effective Irradiance [W/m^2]"]
+column_values_elec = ["Index", "Time", "Tamb [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec Efficency"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0
@@ -451,7 +466,7 @@ pd.set_option('display.max_colwidth', 40)
 electrical_data.to_excel(r'ResultsWithoutCoolingEffect.xlsx')
 
 
-column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out", "HeatFlux_[kW/m^2]", "status",
+column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out", "HeatFlux_[kW/m^2]","Thermal Efficency", "status",
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()

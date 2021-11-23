@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 #  Test cooling effect
+import os
+
 import pandas as pd
 import numpy as np
 
@@ -96,7 +98,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
 "_____________Data Imports_____________"
 "Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
 
-dwd_data = pd.read_excel(r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(os.path.join("Imports", r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx'))  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
@@ -114,7 +116,8 @@ pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
 
 "________Hourly house demand (elec_cons , thermal_cons)________"
-house_data_read = pd.read_excel(r'house_demand.xlsx')
+house_data_read = pd.read_excel(os.path.join("Imports", r'house_demand.xlsx'))
+
 house_data = pd.DataFrame(index=house_data_read.index, columns=["elec_cons", "thermal_cons"])
 
 "_____________Assign Headers to pv_data Dataframe______________"
@@ -126,7 +129,8 @@ house_data["thermal_cons"] = house_data_read.thermal_cons
 "______Import_Operating_strategies & Mass_Flow_Loss_values____________"
 
 #Operating Strategies
-op_strategy = pd.read_excel(r'rauhigkeit.xlsx', sheet_name='Parameter')
+op_strategy = pd.read_excel(os.path.join("Imports", r'rauhigkeit.xlsx'), sheet_name='Parameter')
+
 op_strategy = op_strategy.assign(M = "", L = "")
 op_strategy = op_strategy.rename(columns={'Unnamed: 0': 'Operating_Strategy',
                                           'Einstrahlung [W/m2]': 'Irradiance_[W/m2]',
@@ -146,7 +150,7 @@ mass_flow_loss = pd.DataFrame({"SDP": ["SDP1", "SDP2", "SDP3", "SDP4",
                                            "SDP9", "SDP10", "SDP11", "SDP12"]})
 
 for i in range(len(op_strategy)):
-    m_flow_loss_temp = pd.read_excel(r'rauhigkeit.xlsx', sheet_name=os_name.format(str(i)), usecols = "A,I:J, L, R")
+    m_flow_loss_temp = pd.read_excel(os.path.join("Imports", r'rauhigkeit.xlsx'), sheet_name=os_name.format(str(i)), usecols = "A,I:J, L, R")
     op_strategy.loc[i, 'Mass_Flow_[kg/s]'] = m_flow_loss_temp.iloc[12]['m_dot']
     op_strategy.loc[i, 'Cumulative_Pressure_Drop_[Pa]'] = m_flow_loss_temp.iloc[27]['V_dot_leakage_h']
     m_flow_loss_temp = m_flow_loss_temp.drop(range(12,28))
@@ -456,14 +460,14 @@ electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_ele
 electrical_data_New.fillna(0)  # fill empty rows with 0
 electrical_data_New.loc['Total'] = electrical_data_New.select_dtypes(np.number).sum()  # finding total number of rows
 pd.set_option('display.max_colwidth', 40)
-electrical_data_New.to_excel(r'ResultsWithCoolingEffect.xlsx')
+electrical_data_New.to_excel(os.path.join("Exports", r'ResultsWithCoolingEffect.xlsx'))
 
 
 electrical_data = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
 electrical_data.fillna(0)  # fill empty rows with 0
 electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
 pd.set_option('display.max_colwidth', 40)
-electrical_data.to_excel(r'ResultsWithoutCoolingEffect.xlsx')
+electrical_data.to_excel(os.path.join("Exports", r'ResultsWithoutCoolingEffect.xlsx'))
 
 
 column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out", "HeatFlux_[kW/m^2]","Thermal Efficency", "status",
@@ -477,8 +481,10 @@ Efficiency = thermal_data.loc["Total", "HeatFlux_[kW/m^2]"] / thermal_data.loc["
 print(f'Total Power difference with and without cooling effect {round(totalPowerDiff, 2)} Watt hours')
 print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
 complete_data = pd.merge(electrical_data_New, thermal_data)
-complete_data.to_excel(r'CompleteResult.xlsx')
+complete_data.to_excel(os.path.join("Exports", r'CompleteResult.xlsx'))
+
 complete_data = pd.merge(electrical_data, thermal_data)
-complete_data.to_excel(r'CompleteResultWithoutCoolingEffect.xlsx')
+complete_data.to_excel(os.path.join("Exports", r'CompleteResultWithoutCoolingEffect.xlsx'))
+
 
 P_Valve = sdp.plot_temperature_curve(p_amb=p_amb)

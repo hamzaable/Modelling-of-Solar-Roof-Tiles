@@ -7,6 +7,8 @@ Created on Fri Nov  5 17:12:54 2021
 
 # -*- coding: utf-8 -*-
 #  Test cooling effect
+import os
+
 import pandas as pd
 import time
 import datetime
@@ -107,7 +109,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
 "_____________Data Imports_____________"
 "Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
 
-dwd_data = pd.read_excel(r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(os.path.join("Imports", r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx'))  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
@@ -125,7 +127,7 @@ pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
 
 "________Hourly house demand (elec_cons , thermal_cons)________"
-house_data_read = pd.read_excel(r'house_demand.xlsx')
+house_data_read = pd.read_excel(os.path.join("Imports", r'house_demand.xlsx'))
 house_data = pd.DataFrame(index=house_data_read.index, columns=["elec_cons", "thermal_cons"])
 
 "_____________Assign Headers to pv_data Dataframe______________"
@@ -150,7 +152,8 @@ mass_flow_loss.insert(0, 'undichtigkeit', first_c)
 "______Import_Operating_strategies & Mass_Flow_Loss_values____________"
 
 #Operating Strategies
-op_strategy = pd.read_excel(r'rauhigkeit.xlsx', sheet_name='Parameter')
+op_strategy = pd.read_excel(os.path.join("Imports", r'rauhigkeit.xlsx'), sheet_name='Parameter')
+
 op_strategy = op_strategy.assign(M = "", L = "")
 op_strategy = op_strategy.rename(columns={'Unnamed: 0': 'Operating_Strategy',
                                           'Einstrahlung [W/m2]': 'Irradiance_[W/m2]',
@@ -170,7 +173,7 @@ mass_flow_loss = pd.DataFrame({"SDP": ["SDP1", "SDP2", "SDP3", "SDP4",
                                            "SDP9", "SDP10", "SDP11", "SDP12"]})
 
 for i in range(len(op_strategy)):
-    m_flow_loss_temp = pd.read_excel(r'rauhigkeit.xlsx', sheet_name=os_name.format(str(i)), usecols = "A,I:J, L, R")
+    m_flow_loss_temp = pd.read_excel(os.path.join("Imports", r'rauhigkeit.xlsx'), sheet_name=os_name.format(str(i)), usecols = "A,I:J, L, R")
     op_strategy.loc[i, 'Mass_Flow_[kg/s]'] = m_flow_loss_temp.iloc[12]['m_dot']
     op_strategy.loc[i, 'Cumulative_Pressure_Drop_[Pa]'] = m_flow_loss_temp.iloc[27]['V_dot_leakage_h']
     m_flow_loss_temp = m_flow_loss_temp.drop(range(12,28))

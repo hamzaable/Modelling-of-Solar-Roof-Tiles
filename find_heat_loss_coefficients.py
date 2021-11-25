@@ -25,9 +25,10 @@ print("\nChanged working directory to:\n {0}".format(os.getcwd()))
 
 # Import Data
 print("\nImporting ...\n\n")
-can_data = pd.read_excel(r'can_data.xlsx', usecols = "BI")         
+can_data = pd.read_excel(os.path.join("Imports", r'can_data.xlsx'), usecols = "BI")
 
-weather_data = pd.read_excel(r'weather_data.xlsx', usecols = "A:C, E, I") 
+
+weather_data = pd.read_excel(os.path.join("Imports", r'weather_data.xlsx'), usecols = "A:C, E, I")
 meta = pd.concat([weather_data, can_data], axis=1) 
 meta = weather_data.reset_index().merge(can_data.reset_index()).drop(columns='index').rename(columns={'Temperature °C': 'Temperature ambient °C',
                                                                                                       'Temperatur_1_C_53': 'Temperature 1 module C53',

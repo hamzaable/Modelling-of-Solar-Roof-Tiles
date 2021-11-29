@@ -177,8 +177,51 @@ class Photovoltaic():
             method='lambertw')                                              # Determines the method used to calculate points on the IV curve. The options are 'lambertw', 'newton', or 'brentq'
         
         # Storing module Power to pass it on to the Excel Sheet 
-        # Power output calculation for mutliple modules
+        # Power output calculation for mutliple modules (DC)
         self.annual_energy = self.module_number*self.single_diod_IV['p_mp'].sum() #in Watt hours, because p_mp is given in Watt
+        
+        # Power output calculation for mutliple modules (AC) with PVWatts Inverter Method (NREL)
+        """
+            
+            NREL’s PVWatts inverter model.
+            The PVWatts inverter model [1] calculates inverter efficiency η as a function of input DC power
+            [1] A. P. Dobos, “PVWatts Version 5 Manual,” http://pvwatts.nrel.gov/downloads/pvwattsv5.pdf (2014).
+            
+            For the estimation of the fitting inverter see Project2_further-calculations.xlsx Sheet 'Inverter DC/AC'
+            Rated power of System = 12 * 16 * 15 W = 2.880 kW --> pdc0 assumed to be 3.5 kW
+        
+            Parameters:
+            -----------
+            
+                pdc : numeric
+                    DC power. Same unit as pdc0.
+                    
+                pdc0 : numeric
+                    DC input limit of the inverter. Same unit as pdc.
+                    
+                eta_inv_nom : numeric
+                    Nominal inverter efficiency. [unitless]. Default 0.96
+                    
+                eta_inv_ref : numeric
+                    Reference inverter efficiency. PVWatts defines it to be 0.9637 and is included here for flexibility. [unitless]
+                    The reference inverter effiency_inv_ref is taken from the CEC data for the actual most typical inverter, which is 0.9637 (Pac0/Pdc0)
+                
+               
+            Outputs:
+            --------
+            
+                power_ac : numeric
+                    AC power. Same unit as pdc0.
+                                        
+        """         
+        
+        self.power_ac = pvlib.inverter.pvwatts(
+            pdc=self.annual_energy,                                         
+            pdc0= 3500,
+            eta_inv_nom=0.96, 
+            eta_inv_ref=0.9637)
+        
+        
     
         
 class cellTemperature():

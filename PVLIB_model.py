@@ -217,9 +217,9 @@ class Photovoltaic():
         
         self.power_ac = pvlib.inverter.pvwatts(
             pdc=self.annual_energy,                                         
-            pdc0= 3500,
-            eta_inv_nom=0.96, 
-            eta_inv_ref=0.9637)
+            pdc0= 3000,                                                      # Used Inverter is SMA Sunny Boy 1.5            
+            eta_inv_nom=0.961,                                               # Maximum efficiency 97,2 % / Euro-eta 96,1 % 
+            eta_inv_ref=0.9637)                                              # based on CEC Data
         
         
     

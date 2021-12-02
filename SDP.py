@@ -11,6 +11,7 @@ from tqdm import tqdm
 from PVLIB_model import Photovoltaic
 from PVLIB_model import cellTemperature
 from TESPy_model import SDP_sucking
+from heat_pump import HeatPump
 #from TESPy_model import interpolate_ks_mloss
 
 ##########
@@ -210,7 +211,7 @@ dfThermalSub = [] # Thermal Effect of one row
 totalPowerDiff = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8760]):
+for i in tqdm(pv_data.index[3000:3020]):
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
@@ -369,48 +370,13 @@ for i in tqdm(pv_data.index[0:8760]):
 
         Residue =  t_avg_old - t_avg_new
 
+    "________Calculating the Heat Pump COP________"
+    heatPump = HeatPump(0.068)
+    heatPumpCOP = heatPump.calc_cop_ruhnau(50,t_out_init,"ashp")
 
-
-    # print("total small loops = {}".format(totalLoops))
-
-    # It will be lower for cooling
-    # electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,
-    #                                     timezone=timezone,
-    #                                     m_azimut=m_azimut, m_tilt=m_tilt,
-    #                                     module_number=num_sdp_series * num_sdp_parallel,
-    #                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-    #                                     dhi=pv_data.dhi[i],
-    #                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-    #                                     temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-    #                                     pressure=pv_data.pressure[i], cell_temp=t_avg_new)
-    #
-    # dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
-    #                  int(electrical_yield_new.effective_irradiance)]
-
-    # P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
-    # effective_Iradiance_New = dfSubElec_New[4]
-    # E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
-    #
-    # if E_sdp_Cooling == 0:
-    #     # in deg Celsius
-    #     t_out_init = Tamb
-    #
-    #     # Watt
-    #     p_fan_init = 0
-    #
-    #     # kg/sec
-    #     m_out_init = 0
-    #
-    # else:
-    #     t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
-    #         ambient_temp=pv_data.temp_air[i],
-    #         absorption_incl=E_sdp_Cooling,
-    #         inlet_temp=pv_data.temp_air[i],
-    #         mass_flow=1,
-    #         ks_SRT=ks_SRT,
-    #         m_loss_offdesign=m_loss_offdesign,
-    #         print_res=False)
-
+    "_______Calculating Heat Pump thermal Output_______"
+    "power needed by  = fan * COP =  [ Watts ]  "
+    heatPumpThermal = 68 * heatPumpCOP
     "________Find power diffeence________"
     powerDiff = P_MP_New - P_MP
     totalPowerDiff = powerDiff + totalPowerDiff

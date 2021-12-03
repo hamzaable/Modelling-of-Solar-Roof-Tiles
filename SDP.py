@@ -261,7 +261,7 @@ for i in tqdm(pv_data.index[3000:3020]):
                 num_sdp_series * num_sdp_parallel * 0.1)) * 100 / int(electrical_yield.effective_irradiance),2)
 
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
-                 int(electrical_yield.effective_irradiance),efficency]
+                 int(electrical_yield.effective_irradiance),efficency,0,0]
     "_______Electrical Yield for one cell_____"
     P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel) #Anual Energy / total modules
     effective_Iradiance = dfSubElec[4]
@@ -328,6 +328,13 @@ for i in tqdm(pv_data.index[3000:3020]):
                                             albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                             temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
                                             pressure=pv_data.pressure[i], cell_temp=t_avg_new)
+        "________Calculating the Heat Pump COP________"
+        heatPump = HeatPump(0.068)
+        heatPumpCOP = heatPump.calc_cop_ruhnau(50, t_out_init, "ashp")
+
+        "_______Calculating Heat Pump thermal Output_______"
+        "power needed by  = fan * COP =  [ Watts ]  "
+        heatPumpThermal = 68 * heatPumpCOP
 
         if int(electrical_yield_new.effective_irradiance) == 0:
             efficency_New = 0
@@ -335,7 +342,7 @@ for i in tqdm(pv_data.index[3000:3020]):
             efficency_New = round((round(electrical_yield_new.annual_energy, 2)/(num_sdp_series * num_sdp_parallel*0.1))*100/int(electrical_yield_new.effective_irradiance),2)
 
         dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2),
-                         int(electrical_yield_new.effective_irradiance),efficency_New]
+                         int(electrical_yield_new.effective_irradiance),efficency_New,heatPumpCOP,heatPumpThermal]
 
         P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
         effective_Iradiance_New = dfSubElec_New[4]
@@ -370,13 +377,7 @@ for i in tqdm(pv_data.index[3000:3020]):
 
         Residue =  t_avg_old - t_avg_new
 
-    "________Calculating the Heat Pump COP________"
-    heatPump = HeatPump(0.068)
-    heatPumpCOP = heatPump.calc_cop_ruhnau(50,t_out_init,"ashp")
 
-    "_______Calculating Heat Pump thermal Output_______"
-    "power needed by  = fan * COP =  [ Watts ]  "
-    heatPumpThermal = 68 * heatPumpCOP
     "________Find power diffeence________"
     powerDiff = P_MP_New - P_MP
     totalPowerDiff = powerDiff + totalPowerDiff
@@ -420,7 +421,7 @@ for i in tqdm(pv_data.index[3000:3020]):
     dfMainElecNew.append(dfSubElec_New)
 
 "_________Saving results in excel_____________"
-column_values_elec = ["Index", "Time", "Tamb [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec Efficency"]
+column_values_elec = ["Index", "Time", "Tamb [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec Efficency","HP_COP","HP_Thermal[W]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0

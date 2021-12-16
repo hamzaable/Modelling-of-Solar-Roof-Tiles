@@ -128,4 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+Exports
+Imports/can_data.xlsx
+
 

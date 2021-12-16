@@ -212,6 +212,7 @@ dfThermalMain = [] #Thermal Results
 dfThermalSub = [] # Thermal Effect of one row
 df_test_elecindicators_full = [] # testing performance indicators
 totalPowerDiff = 0
+countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
 for i in tqdm(pv_data.index[5548:5564]):
@@ -326,7 +327,7 @@ for i in tqdm(pv_data.index[5548:5564]):
             ks_SRT=ks_SRT,
             m_loss_offdesign=m_loss_offdesign,
             )
-
+        countNonZero = countNonZero + 1
     t_out = t_out_init
     "____Finding Avg temperature for cooling effect_____"
 
@@ -508,7 +509,9 @@ column_values_elec = ["Index", "Time", "Tavg [°C]", "Power [W]", "Effective Irr
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0
 div = len(electrical_data_New[electrical_data_New["Effective Irradiance [W/m^2]"] > 0])
+
 electrical_data_New.loc['Total'] = electrical_data_New.select_dtypes(np.number).sum()  # finding total number of rows
+electrical_data_New.loc['Average'] = electrical_data_New.loc['Total']/countNonZero
 
 """
 electrical_data_New.loc['Averages'] = electrical_data_New.select_dtypes(np.number).sum()
@@ -531,6 +534,7 @@ electrical_data_New.to_excel(os.path.join("Exports", r'ResultsWithCoolingEffect.
 electrical_data = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
 electrical_data.fillna(0)  # fill empty rows with 0
 electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
+electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero  # finding total number of rows
 #electrical_data.loc['Total']['Time'] = "Sum"
 pd.set_option('display.max_colwidth', 40)
 electrical_data.to_excel(os.path.join("Exports", r'ResultsWithoutCoolingEffect.xlsx'))
@@ -540,6 +544,7 @@ column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out"
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
+thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
 # print(thermal_data)
 
@@ -562,5 +567,4 @@ print("\nAnnual performance factor (Jahresarbeitzahl) of the heat Pump: ", Jahre
 "________Plotting______"
 
 P_Valve = sdp.plot_temperature_curve(p_amb=p_amb)
-
 #len(electrical_data_New[electrical_data_New["Effective Irradiance [W/m^2]"] > 0])

@@ -270,6 +270,7 @@ for i in tqdm(pv_data.index[5548:5564]):
         
     if int(electrical_yield.effective_irradiance) == 0:
         E_ideal_STC = 0
+        PR = 0 
         C_k_STC = 0
         PR_STC = 0
         C_k_annual = 0
@@ -285,12 +286,13 @@ for i in tqdm(pv_data.index[5548:5564]):
         # Ideal energy yield under STC conditions and temperature corrected
         E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)  
         
-        # Perforance ratio under STC conditions and temperature corrected
+         # Final system yield (net energy yield)
+        Y_F = round((float(electrical_yield.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
+        
+        # Perforance ratio (Leistungsverhältnis), performance ratio under STC conditions and temperature corrected
+        PR = round((Y_F/(float(electrical_yield.effective_irradiance) / 1000)), 2)
         PR_STC = round((electrical_yield.power_ac / E_ideal_STC), 2)
         PR_annual_eq = round(electrical_yield.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)
-        
-        # Final system yield (net energy yield)
-        Y_F = round((float(electrical_yield.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
                 
         # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
         autarky_rate = round((float(electrical_yield.power_ac) / house_data["elec_cons"][i])*100, 2)
@@ -299,7 +301,7 @@ for i in tqdm(pv_data.index[5548:5564]):
         
     # use t ambient for no cooling effect
     dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
-                 int(electrical_yield.effective_irradiance),efficency,E_ideal_STC, PR_STC, PR_annual_eq, Y_F, autarky_rate,0,0]
+                 int(electrical_yield.effective_irradiance),efficency,E_ideal_STC, PR, PR_STC, PR_annual_eq, Y_F, autarky_rate,0,0]
     "_______Electrical Yield for one cell_____"
     P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel) #Anual Energy / total modules
     effective_Iradiance = dfSubElec[4]
@@ -386,6 +388,7 @@ for i in tqdm(pv_data.index[5548:5564]):
         
         if int(electrical_yield_new.effective_irradiance) == 0:
             E_ideal_STC = 0
+            PR = 0
             C_k_STC = 0
             PR_STC = 0
             C_k_annual = 0
@@ -401,13 +404,14 @@ for i in tqdm(pv_data.index[5548:5564]):
             # Ideal energy yield under STC conditions and temperature corrected
             E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)  
             
-            # Perforance ratio under STC conditions and temperature corrected
+            # Final system yield (net energy yield)
+            Y_F = round((float(electrical_yield_new.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
+            
+            # Perforance ratio (Leistungsverhältnis), performance ratio under STC conditions and temperature corrected
+            PR = round((Y_F/(float(electrical_yield_new.effective_irradiance) / 1000)), 2)
             PR_STC = round((electrical_yield_new.power_ac / E_ideal_STC), 2)
             PR_annual_eq = round(electrical_yield_new.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)
             
-            # Final system yield (net energy yield)
-            Y_F = round((float(electrical_yield_new.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
-                    
             # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
             autarky_rate = round((float(electrical_yield_new.power_ac) / house_data["elec_cons"][i])*100, 2)
                         
@@ -415,7 +419,7 @@ for i in tqdm(pv_data.index[5548:5564]):
         
         "______Saving results__________"                          
         dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance),
-                         efficency_New, E_ideal_STC, PR_STC, PR_annual_eq, Y_F, autarky_rate,heatPumpCOP,heatPumpThermal]
+                         efficency_New, E_ideal_STC, PR, PR_STC, PR_annual_eq, Y_F, autarky_rate,heatPumpCOP,heatPumpThermal]
 
         P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
         effective_Iradiance_New = dfSubElec_New[4]
@@ -504,7 +508,7 @@ for i in tqdm(pv_data.index[5548:5564]):
 
 "_________Saving results in excel_____________"
 
-column_values_elec = ["Index", "Time", "Tavg [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
+column_values_elec = ["Index", "Time", "Tavg [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0

@@ -20,8 +20,8 @@ end = "31-12-{} 23:00".format(str(2019))
 naive_times = pd.date_range(start=start, end=end, freq='1h')
 
 "________Location Parameters___________"
-latitude = 50.9375
-longitude = 6.9603
+latitude = 50.934055
+longitude = 6.990349
 name = 'Cologne'
 altitude = 121
 timezone = 'Etc/GMT+2'

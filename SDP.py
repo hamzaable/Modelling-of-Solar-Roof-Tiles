@@ -215,7 +215,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[5548:5564]):
+for i in tqdm(pv_data.index[0:8759]):
 
 
     "_______Looping through excel rows_______"
@@ -281,7 +281,7 @@ for i in tqdm(pv_data.index[5548:5564]):
         # Bemessungsleitungs Temperaturanpassungsfaktor Ck
         # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
         C_k_STC = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()-25)                                                    # for STC conditions
-        C_k_annual = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()- 22)                                                # temperature corrected                                                                                                                                                                                   
+        C_k_annual = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()- 22.18)                                             # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - without cooling effect                                                                                                                                                                                   
         
         # Ideal energy yield under STC conditions and temperature corrected
         E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)  
@@ -399,7 +399,7 @@ for i in tqdm(pv_data.index[5548:5564]):
             # Bemessungsleitungs Temperaturanpassungsfaktor Ck
             # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
             C_k_STC = 1 + (module["gamma_pmp"]/100) * (t_avg_new-25)                                                    # for STC conditions
-            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_avg_new- 22)                                                # temperature corrected                                                                                                                                                                                   
+            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_avg_new-25.14)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect                                                                                                                                                                                 
             
             # Ideal energy yield under STC conditions and temperature corrected
             E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)  

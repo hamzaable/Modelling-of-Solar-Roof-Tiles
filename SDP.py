@@ -215,7 +215,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8759]):
+for i in tqdm(pv_data.index[8:25]):
 
 
     "_______Looping through excel rows_______"
@@ -227,7 +227,6 @@ for i in tqdm(pv_data.index[0:8759]):
     ghi = pv_data.ghi[i]
     dni = pv_data.dni[i]
     dhi = pv_data.dhi[i]
-    Tamb = pv_data.temp_air[i]
 
     "______Calculating ks value & mass flow leakage via interpolation______"
 
@@ -300,17 +299,35 @@ for i in tqdm(pv_data.index[0:8759]):
         #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), E_ideal, PR, Y_F, autarkie_rate]
         
     # use t ambient for no cooling effect
-    dfSubElec = [i, time, temp_amb, round(electrical_yield.annual_energy, 2),
-                 int(electrical_yield.effective_irradiance),efficency,E_ideal_STC, PR, PR_STC, PR_annual_eq, Y_F, autarky_rate,0,0]
+    dfSubElec = [i,
+                 time,
+                 temp_amb,
+                 round(float(initCellTemperature.tcell),2),
+                 round(float(initCellTemperature.tcell),2),
+                 temp_amb,
+                 round(electrical_yield.annual_energy, 2),
+                 int(electrical_yield.effective_irradiance),
+                 efficency,
+                 E_ideal_STC,
+                 PR,
+                 PR_STC,
+                 PR_annual_eq,
+                 Y_F,
+                 autarky_rate,
+                 0,
+                 0]
+
+
+
     "_______Electrical Yield for one cell_____"
-    P_MP = dfSubElec[3] / (num_sdp_series * num_sdp_parallel) #Anual Energy / total modules
-    effective_Iradiance = dfSubElec[4]
+    P_MP = round(electrical_yield.annual_energy, 2) / (num_sdp_series * num_sdp_parallel) #Anual Energy / total modules
+    effective_Iradiance = int(electrical_yield.effective_irradiance)
     "______Overall per unit area____"
     E_sdp_New = (0.93 * (effective_Iradiance * module['Area']) - (P_MP)) / module['Area']
 
     if E_sdp_New == 0:
         # in deg Celsius
-        t_out_init = Tamb
+        t_heatflux_out = temp_amb
 
         # Watt
         p_fan_init = 0
@@ -320,7 +337,7 @@ for i in tqdm(pv_data.index[0:8759]):
 
     else:
         "_______SDP Calculations to find t_out, fan in , mass flow out"
-        t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
+        t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_New,
             inlet_temp=pv_data.temp_air[i],
@@ -330,18 +347,18 @@ for i in tqdm(pv_data.index[0:8759]):
             m_loss_offdesign=m_loss_offdesign,
             )
         countNonZero = countNonZero + 1
-    t_out = t_out_init
+
     "____Finding Avg temperature for cooling effect_____"
 
     T_PV_Temp_Model = float(initCellTemperature.tcell)
 
     #  t_avg = (T_PV_Temp_Model + t_out) / 2
 
-    t_m = (temp_amb + t_out) / 2
+    t_m = (temp_amb + t_heatflux_out) / 2
 
-    t_avg_new = (T_PV_Temp_Model + t_m) / 2
+    t_cooling = (T_PV_Temp_Model + t_m) / 2
 
-    Residue =  T_PV_Temp_Model - t_avg_new
+    Residue = T_PV_Temp_Model - t_cooling
 
     totalLoops = 0
 
@@ -353,9 +370,9 @@ for i in tqdm(pv_data.index[0:8759]):
                                              dhi=pv_data.dhi[i],
                                              albedo=albedo, irrad_model=irrad_model,
                                              wind_amb=pv_data.wind_speed[i],
-                                             temp_avg=t_avg_new)
+                                             temp_avg=t_cooling)
 
-        t_avg_old = t_avg_new
+        t_avg_old = t_cooling
 
 
         "________This electrical_yield_new is using cell temperature found from cooling effect above________"
@@ -367,10 +384,10 @@ for i in tqdm(pv_data.index[0:8759]):
                                             dhi=pv_data.dhi[i],
                                             albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                             temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                            pressure=pv_data.pressure[i], cell_temp=t_avg_new)
+                                            pressure=pv_data.pressure[i], cell_temp=t_cooling)
         "________Calculating the Heat Pump COP_with Cooling effect_______"
         heatPump = HeatPump(0.068)
-        heatPumpCOP = round(heatPump.calc_cop_ruhnau(50, t_out_init, "ashp"), 2)
+        heatPumpCOP = round(heatPump.calc_cop_ruhnau(50, t_heatflux_out, "ashp"), 2)
         heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(50, pv_data.temp_air[i], "ashp"), 2)
 
         "_______Calculating Heat Pump thermal Output_______"
@@ -398,8 +415,8 @@ for i in tqdm(pv_data.index[0:8759]):
         else:
             # Bemessungsleitungs Temperaturanpassungsfaktor Ck
             # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
-            C_k_STC = 1 + (module["gamma_pmp"]/100) * (t_avg_new-25)                                                    # for STC conditions
-            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_avg_new-25.14)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect                                                                                                                                                                                 
+            C_k_STC = 1 + (module["gamma_pmp"]/100) * (t_cooling - 25)                                                    # for STC conditions
+            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_cooling - 25.14)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect
             
             # Ideal energy yield under STC conditions and temperature corrected
             E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)  
@@ -418,18 +435,33 @@ for i in tqdm(pv_data.index[0:8759]):
         #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), C_k_STC, E_ideal_STC, PR_STC, C_k_annual, Y_F, PR_annual_eq, autarky_rate]
         
         "______Saving results__________"                          
-        dfSubElec_New = [i, time, t_avg_new, round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance),
-                         efficency_New, E_ideal_STC, PR, PR_STC, PR_annual_eq, Y_F, autarky_rate,heatPumpCOP,heatPumpThermal]
+        dfSubElec_New = [i,
+                         time,
+                         temp_amb,
+                         round(t_cooling,2),
+                         round(T_PV_Temp_Model,2),
+                         round(t_heatflux_out,2),
+                         round(electrical_yield_new.annual_energy, 2),
+                         int(electrical_yield_new.effective_irradiance),
+                         efficency_New,
+                         E_ideal_STC,
+                         PR,
+                         PR_STC,
+                         PR_annual_eq,
+                         Y_F,
+                         autarky_rate,
+                         heatPumpCOP,
+                         heatPumpThermal]
 
-        P_MP_New = dfSubElec_New[3] / (num_sdp_series * num_sdp_parallel)
-        effective_Iradiance_New = dfSubElec_New[4]
+        P_MP_New = round(electrical_yield_new.annual_energy, 2) / (num_sdp_series * num_sdp_parallel)
+        effective_Iradiance_New = int(electrical_yield_new.effective_irradiance)
 
         # It will be lower for cooling
         E_sdp_Cooling = (0.93 * (effective_Iradiance_New * module['Area']) - (P_MP_New)) / module['Area']
 
         if E_sdp_Cooling == 0:
             # in deg Celsius
-            t_out = Tamb
+            t_heatflux_out = temp_amb
 
             # Watt
             p_fan = 0
@@ -439,7 +471,7 @@ for i in tqdm(pv_data.index[0:8759]):
 
         else:
 
-            t_out_init, p_fan_init, m_out_init = sdp.calculate_sdp(
+            t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
                 ambient_temp=pv_data.temp_air[i],
                 absorption_incl=E_sdp_Cooling,
                 inlet_temp=pv_data.temp_air[i],
@@ -449,10 +481,10 @@ for i in tqdm(pv_data.index[0:8759]):
                 m_loss_offdesign=m_loss_offdesign,
             )
 
-        t_m = (temp_amb + t_out_init) / 2
-        t_avg_new = (T_PV_Temp_Model + t_m) / 2
-
-        Residue =  t_avg_old - t_avg_new
+        # t_m = (temp_amb + t_out_init) / 2
+        # t_avg_new = (T_PV_Temp_Model + t_m) / 2
+        #
+        # Residue =  t_avg_old - t_avg_new
 
 
     "________Find power diffeence________"
@@ -463,7 +495,7 @@ for i in tqdm(pv_data.index[0:8759]):
     m_out = m_out_init
 
     # Calculating the heat flux normed on one m^2 (Division through number of SRTs and their area 0.10)
-    flux = round((m_out * 1.005 * (t_out - Tamb) / (num_sdp_series * num_sdp_parallel * 0.10)), 3) # cp_air: 1.005 kJ/kg*K, Unit is kJ/s --> kW
+    flux = round((m_out * 1.005 * (t_heatflux_out - temp_amb) / (num_sdp_series * num_sdp_parallel * 0.10)), 3) # cp_air: 1.005 kJ/kg*K, Unit is kJ/s --> kW
     
     "_____Calculating_Performance_Indicators_(thermal)_Values_only_with_Cooling_effect_________"
      
@@ -491,11 +523,11 @@ for i in tqdm(pv_data.index[0:8759]):
     else:
         status = "System Off"
 
-    if dfSubElec[4] == 0:
+    if round(electrical_yield.annual_energy, 2) == 0:
         thermal_efficency = 0
     else:
-        thermal_efficency = round((flux * 1000*100) / dfSubElec_New[4],2)
-    dfThermalSub = [i, time, Tamb, round(E_sdp_Cooling, 2), t_out, p_fan, m_out, flux,thermal_efficency, status, elec_parameter,
+        thermal_efficency = round((flux * 1000*100) / int(electrical_yield_new.effective_irradiance),2)
+    dfThermalSub = [i, time, round(E_sdp_Cooling, 2), p_fan, m_out, flux, thermal_efficency, status, elec_parameter,
                     thermal_parameter]
     dfThermalMain.append(dfThermalSub)
 
@@ -508,7 +540,7 @@ for i in tqdm(pv_data.index[0:8759]):
 
 "_________Saving results in excel_____________"
 
-column_values_elec = ["Index", "Time", "Tavg [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
+column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0
@@ -532,7 +564,6 @@ electrical_data_New.loc['Averages'] = electrical_data_New.div(div, level=3)
 """
 
 pd.set_option('display.max_colwidth', 40)
-electrical_data_New.to_excel(os.path.join("Exports", r'ResultsWithCoolingEffect.xlsx'))
 
 
 electrical_data = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
@@ -541,10 +572,10 @@ electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  #
 electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero  # finding total number of rows
 #electrical_data.loc['Total']['Time'] = "Sum"
 pd.set_option('display.max_colwidth', 40)
-electrical_data.to_excel(os.path.join("Exports", r'ResultsWithoutCoolingEffect.xlsx'))
 
 
-column_values = ["Index", "Time", "Tamb", "E_sdp_eff", "T_out", "P_fan", "M_out", "HeatFlux_[kW/m^2]","Thermal Efficency","status",
+
+column_values = ["Index", "Time", "E_sdp_eff", "P_fan", "M_out", "HeatFlux_[kW/m^2]","Thermal Efficency","status",
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()

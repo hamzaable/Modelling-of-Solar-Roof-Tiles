@@ -42,7 +42,7 @@ pv_data["temp_air"] = dwd_data.temp
 pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
 
-house_data_read = pd.read_excel(r'house_demand.xlsx')
+house_data_read = pd.read_excel(os.path.join(wd_path, r'house_demand.xlsx'))
 house_data = pd.DataFrame(index=house_data_read.index, columns=["elec_cons","thermal_cons"])
 
 house_data["DateTimeIndex"] = house_data_read.date
@@ -77,7 +77,7 @@ sdp.init_sdp(ambient_temp=-4,
 df = []
 df1= []
 
-for i in pv_data.index[0:8759]:
+for i in pv_data.index[0:24]:
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]

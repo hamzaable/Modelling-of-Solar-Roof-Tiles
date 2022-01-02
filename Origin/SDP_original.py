@@ -24,8 +24,9 @@ timezone= 'Etc/GMT+2'
 
 "_____________Data Imports_____________"
 "Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
+wd_path = "C:/Users/mariu/Documents/GitHub/Modelling_of_Solar_Roof_Tiles/Modelling-of-Solar-Roof-Tile/Origin"
 
-dwd_data = pd.read_excel(os.path.join("Imports", r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx'))  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(os.path.join(wd_path, r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx'))  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni","ghi",
                                                      "dhi",
@@ -51,7 +52,8 @@ house_data["thermal_cons"] = house_data_read.thermal_cons
 
 
 num_sdp_series=12
-num_sdp_parallel=38
+num_sdp_parallel=16     # Only 12 for tespy calculations
+module_number = num_sdp_series*num_sdp_parallel
 
 #####
 #Thermal initialization
@@ -63,7 +65,7 @@ sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
 sdp.init_sdp(ambient_temp=-4,
              absorption_incl=300,
              inlet_temp=-4,
-             mass_flow=1,
+             mass_flow=0.0320168,
              # zeta=4e6,
              m_loss=0.001,
              print_res=False)
@@ -75,7 +77,7 @@ sdp.init_sdp(ambient_temp=-4,
 df = []
 df1= []
 
-for i in pv_data.index[0:8760]:
+for i in pv_data.index[0:8759]:
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -84,10 +86,10 @@ for i in pv_data.index[0:8760]:
     dhi = pv_data.dhi[i]
     
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
-    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy,2), int(electrical_yield.effective_irradiance)]
+    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy*module_number,2), int(electrical_yield.effective_irradiance), round(electrical_yield.tcell, 2)]
     df.append(df1)
 
-column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance"]
+column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance", "TModule"]
 electrical_data = pd.DataFrame(data=df, columns = column_values)
 electrical_data.fillna(0)
 electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()

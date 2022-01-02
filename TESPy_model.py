@@ -178,7 +178,7 @@ class SDP_sucking():
     def __init__(self,
                  sdp_in_series,
                  sdp_in_parallel,
-                 loss_key_figures_lin=34,
+                 loss_key_figures_lin=16.41,
                  loss_key_figures_quad=0.03,
                  width_sdp=0.244,
                  thickness_sdp=0.02,

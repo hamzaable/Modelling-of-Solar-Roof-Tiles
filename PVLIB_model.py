@@ -263,6 +263,6 @@ class cellTemperature():
         self.tcell = pvlib.temperature.faiman(self.total_irrad['poa_global'],
                                                     temp_avg,
                                                     wind_amb,
-                                                    u0=25.0,                # Combined heat loss factor coefficient [W*m^-2*C^-1]
-                                                    u1=6.84)                # Combined heat loss factor influenced by wind [W*m^-2*C^-1(m/s)]
+                                                    u0=17.896,                # Combined heat loss factor coefficient [W*m^-2*C^-1]
+                                                    u1=2.015)                # Combined heat loss factor influenced by wind [W*m^-2*C^-1(m/s)]
     

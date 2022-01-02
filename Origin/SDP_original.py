@@ -9,8 +9,8 @@ import numpy as np
 import os
 
 ##########
-from PVLIB_model import Photovoltaic
-from TESPy_model import SDP_sucking
+from PVLIB_model_original import Photovoltaic
+from TESPy_model_original import SDP_sucking
 ##########
 start = "01-01-{} 00:00".format(str(2019))
 end = "31-12-{} 23:00".format(str(2019))

@@ -82,7 +82,7 @@ df1= []
 
 countnonzero=0
 
-for i in tqdm(pv_data.index[0:24]):
+for i in tqdm(pv_data.index[0:8759]):
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]

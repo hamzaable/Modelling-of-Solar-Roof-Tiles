@@ -10,7 +10,7 @@ import os
 
 ##########
 from PVLIB_model_original import Photovoltaic
-from TESPy_model_original import SDP_sucking
+#from TESPy_model_original import SDP_sucking
 ##########
 start = "01-01-{} 00:00".format(str(2019))
 end = "31-12-{} 23:00".format(str(2019))
@@ -55,6 +55,7 @@ num_sdp_series=12
 num_sdp_parallel=16     # Only 12 for tespy calculations
 module_number = num_sdp_series*num_sdp_parallel
 
+"""
 #####
 #Thermal initialization
 #####
@@ -70,6 +71,7 @@ sdp.init_sdp(ambient_temp=-4,
              m_loss=0.001,
              print_res=False)
 
+"""
 ######
 ##Electrical Yeild
 ######
@@ -99,6 +101,7 @@ print(electrical_data)
 
 electrical_data.to_excel(r'Results1.xlsx') 
 
+"""
 #####
 #thermal Yeild
 #####
@@ -106,7 +109,7 @@ electrical_data.to_excel(r'Results1.xlsx')
 y=0
 df = []
 df1= []
-for i in pv_data.index[0:8760]:
+for i in pv_data.index[0:24]:
     time = pv_data.DateTimeIndex[i]    
     E_sdp = (0.93*(electrical_data.Effective_Irradiance[i]*0.10)-(electrical_data.Power[i]))/0.10 
     Tamb = pv_data.temp_air[i]
@@ -186,4 +189,4 @@ print("Efficiency wrt Effective Irradiance:" , round(Efficiency*100,2),"%")
 
 complete_data=pd.merge(electrical_data,thermal_data)
 complete_data.to_excel(r'Result2.xlsx')
-
+"""

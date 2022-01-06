@@ -1,1 +1,1 @@
-COunt non zero (vlaues with correct effective irradiance is: 4232)
+COunt non zero (vlaues with correct effective irradiance is: 4232) equals old model calculations also.

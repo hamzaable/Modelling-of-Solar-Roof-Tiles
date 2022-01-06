@@ -136,3 +136,11 @@ Imports/can_data.xlsx
 sdp/.gitignore
 
 
+*.xlsx
+Exports/CompleteResultWithoutCoolingEffect.xlsx
+sdp/components/char_line.csv
+sdp/components/char_map.csv
+sdp/components/Compressor.csv
+sdp/components/SolarCollector.csv
+sdp/components/Valve.csv
+sdp/connections.csv

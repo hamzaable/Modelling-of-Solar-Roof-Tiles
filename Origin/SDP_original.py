@@ -7,6 +7,7 @@ Created on Mon Dec 28 22:15:04 2020
 import pandas as pd
 import numpy as np
 import os
+from tqdm import tqdm
 
 ##########
 from PVLIB_model_original import Photovoltaic
@@ -79,7 +80,9 @@ sdp.init_sdp(ambient_temp=-4,
 df = []
 df1= []
 
-for i in pv_data.index[0:8759]:
+countNonZero=0
+
+for i in tqdm(pv_data.index[0:8759]):
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -90,11 +93,15 @@ for i in pv_data.index[0:8759]:
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
     df1 = [i, time, temp_amb, round(electrical_yield.annual_energy*module_number,2), int(electrical_yield.effective_irradiance), round(electrical_yield.tcell.item(), 2)]
     df.append(df1)
+    
+    if electrical_yield.effective_irradiance.item() > 0:
+        countNonZero+=1
 
 column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance", "TModule"]
 electrical_data = pd.DataFrame(data=df, columns = column_values)
 electrical_data.fillna(0)
 electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()
+electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 40)
 print(electrical_data)
 

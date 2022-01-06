@@ -45,7 +45,9 @@ timezone= 'Etc/GMT+2'
 module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8,
           "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, "Aisc": 0.0010, "Bvoco": -0.0158,
           "gamma_pmp": -0.3792, "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439,
-          "A4": 0.00002219}
+          "A4": 0.00002219, "B0": 1.0287, "B1": -0.0108 , "B2": 0.001, "B3": -4E-05 , "B4": 5E-07, 
+          "B5": -3E-09} # B parameters assessed via regression of I AM modifier values
+
 # =============================================================================
 # #Alberino P
 # module = {"Vintage": 2020, "Material": "mc-Si", "Cells_in_Series": 8, 

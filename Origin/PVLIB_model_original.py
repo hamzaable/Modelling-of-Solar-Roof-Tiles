@@ -42,11 +42,14 @@ timezone= 'Etc/GMT+2'
 #           "C4": 1, "C5": 0, "C6": 1, "C7": 0}
 # # =============================================================================
 # #ar=0.14
-module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8,
-          "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, "Aisc": 0.0010, "Bvoco": -0.0158,
-          "gamma_pmp": -0.3792, "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439,
-          "A4": 0.00002219, "B0": 1.0287, "B1": -0.0108 , "B2": 0.001, "B3": -4E-05 , "B4": 5E-07, 
-          "B5": -3E-09} # B parameters assessed via regression of I AM modifier values
+module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "Cells_in_Series": 8, 
+          "Parallel_Strings": 2, "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, 
+          "Aisc": 0.00279, "Aimp": -0.0003, "Bvoco": -0.01608, "Mbvoc": 0, "Bvmpo": -0.01608, 
+          "Mbvmp": 0, "N": 1, "IXO": 3.5, "IXXO": 2.05, "A0": 0.9645, "A1": 0.02753, 
+          "A2": -0.002848, "A3": -0.0001439, "A4": 0.00002219, "B0": 1.0287, "B1": -0.0108 , 
+          "B2": 0.001, "B3": -4E-05 , "B4": 5E-07, "B5": -3E-09, "DTC": 3, "FD": 1, "A": -3.47, 
+          "B": -0.0594, "C0": 1, "C1": 0, "C2": 0.912848952156834, "C3": 0.0582212364987667, 
+          "C4": 1, "C5": 0, "C6": 1, "C7": 0} # B parameters assessed via regression of I AM modifier values
 # =============================================================================
 # #Alberino P
 # module = {"Vintage": 2020, "Material": "mc-Si", "Cells_in_Series": 8, 

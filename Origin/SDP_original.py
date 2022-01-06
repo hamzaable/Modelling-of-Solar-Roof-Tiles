@@ -7,6 +7,7 @@ Created on Mon Dec 28 22:15:04 2020
 import pandas as pd
 import numpy as np
 import os
+from tqdm import tqdm
 
 ##########
 from PVLIB_model_original import Photovoltaic
@@ -16,8 +17,8 @@ start = "01-01-{} 00:00".format(str(2019))
 end = "31-12-{} 23:00".format(str(2019))
 naive_times = pd.date_range(start= start, end=end, freq='1h')
 
-latitude = 50.9375
-longitude = 6.9603
+latitude = 50.934055
+longitude = 6.990349
 name='Cologne'
 altitude=  121
 timezone= 'Etc/GMT+2'
@@ -77,7 +78,9 @@ sdp.init_sdp(ambient_temp=-4,
 df = []
 df1= []
 
-for i in pv_data.index[0:24]:
+countNonZero = 0
+
+for i in tqdm(pv_data.index[0:8759]):
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -86,7 +89,7 @@ for i in pv_data.index[0:24]:
     dhi = pv_data.dhi[i]
     
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
-    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy*module_number,2), int(electrical_yield.effective_irradiance), round(electrical_yield.tcell, 2)]
+    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy*module_number,2), int(electrical_yield.effective_irradiance), round(electrical_yield.tcell.item(), 2)]
     df.append(df1)
 
 column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance", "TModule"]
@@ -106,10 +109,13 @@ electrical_data.to_excel(r'Results1.xlsx')
 y=0
 df = []
 df1= []
-for i in pv_data.index[0:8760]:
+for i in tqdm(pv_data.index[0:8759]):
     time = pv_data.DateTimeIndex[i]    
     E_sdp = (0.93*(electrical_data.Effective_Irradiance[i]*0.10)-(electrical_data.Power[i]))/0.10 
     Tamb = pv_data.temp_air[i]
+    
+    if electrical_data.Effective_Irradiance[i] > 0:
+        countNonZero+=1
         
     if (E_sdp==0):
             #in deg celcius
@@ -176,6 +182,7 @@ print(df)
 column_values = ["Index","Time", "Tamb", "E_sdp_eff","T_out", "P_fan", "M_out", "HeatFlux", "status", "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=df, columns = column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
+electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
 print(thermal_data)
 

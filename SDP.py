@@ -239,7 +239,6 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                                                               mass_flow_temp=mass_flow_temp)
         m_loss_offdesign = m_loss_offdesign.set_axis(['5_1_dpx'], axis=1, inplace=False)
 
-
     "______Getting the initial cell temperature______"
     initCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
                                           m_azimut=m_azimut, m_tilt=m_tilt,

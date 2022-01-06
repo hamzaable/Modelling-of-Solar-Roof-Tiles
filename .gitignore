@@ -144,3 +144,5 @@ sdp/components/Compressor.csv
 sdp/components/SolarCollector.csv
 sdp/components/Valve.csv
 sdp/connections.csv
+*.xlsx
+*.csv

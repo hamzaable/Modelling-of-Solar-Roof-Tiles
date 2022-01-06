@@ -88,7 +88,7 @@ for i in pv_data.index[0:24]:
     dhi = pv_data.dhi[i]
     
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i], module_number=module_number)
-    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy*module_number,2), int(electrical_yield.effective_irradiance)]
+    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy,2), int(electrical_yield.effective_irradiance)]
     df.append(df1)
 
 column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance"]

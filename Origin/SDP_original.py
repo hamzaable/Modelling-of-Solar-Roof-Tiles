@@ -55,6 +55,7 @@ num_sdp_series=12
 num_sdp_parallel=16     # Only 12 for tespy calculations
 module_number = num_sdp_series*num_sdp_parallel
 
+"""
 #####
 #Thermal initialization
 #####
@@ -74,10 +75,11 @@ sdp.init_sdp(ambient_temp=-4,
 ##Electrical Yeild
 ######
 
+"""
 df = []
 df1= []
 
-for i in pv_data.index[0:24]:
+for i in pv_data.index[0:8759]:
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -86,7 +88,7 @@ for i in pv_data.index[0:24]:
     dhi = pv_data.dhi[i]
     
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i])
-    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy*module_number,2), int(electrical_yield.effective_irradiance), round(electrical_yield.tcell, 2)]
+    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy*module_number,2), int(electrical_yield.effective_irradiance), round(electrical_yield.tcell.item(), 2)]
     df.append(df1)
 
 column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance", "TModule"]
@@ -102,7 +104,7 @@ electrical_data.to_excel(r'Results1.xlsx')
 #####
 #thermal Yeild
 #####
-
+"""
 y=0
 df = []
 df1= []
@@ -186,4 +188,4 @@ print("Efficiency wrt Effective Irradiance:" , round(Efficiency*100,2),"%")
 
 complete_data=pd.merge(electrical_data,thermal_data)
 complete_data.to_excel(r'Result2.xlsx')
-
+"""

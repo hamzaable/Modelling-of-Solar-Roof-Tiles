@@ -215,7 +215,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
+for i in tqdm(pv_data.index[0:24]):   # One Year Sim.: [0:8759]
 
 
     "_______Looping through excel rows_______"
@@ -306,6 +306,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                  round(float(initCellTemperature.tcell),2),
                  temp_amb,
                  round(electrical_yield.annual_energy, 2),
+                 round(electrical_yield.power_ac, 2),
                  int(electrical_yield.effective_irradiance),
                  efficency,
                  E_ideal_STC,
@@ -442,6 +443,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                          round(T_PV_Temp_Model,2),
                          round(t_heatflux_out,2),
                          round(electrical_yield_new.annual_energy, 2),
+                         round(electrical_yield.power_ac, 2),
                          int(electrical_yield_new.effective_irradiance),
                          efficency_New,
                          E_ideal_STC,
@@ -540,7 +542,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
 "_________Saving results in excel_____________"
 
-column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
+column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0

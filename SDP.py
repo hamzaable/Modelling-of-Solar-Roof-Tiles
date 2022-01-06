@@ -169,7 +169,7 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 "______TESPy Model Parameters_________"
 
 num_sdp_series = 12                                                             # Changed from 12 to 2 for test purpose
-num_sdp_parallel = 12                                                           # Changed from 38 to 1 for test purpose
+num_sdp_parallel = 16                                                           # Changed from 38 to 1 for test purpose
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
 mass_flow = 0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
@@ -215,7 +215,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
+for i in tqdm(pv_data.index[0:24]):   # One Year Sim.: [0:8759]
 
 
     "_______Looping through excel rows_______"
@@ -280,7 +280,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
         # Bemessungsleitungs Temperaturanpassungsfaktor Ck
         # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
         C_k_STC = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()-25)                                                    # for STC conditions
-        C_k_annual = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()- 22.18)                                             # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - without cooling effect                                                                                                                                                                                   
+        C_k_annual = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()- 31.01)                                             # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - without cooling effect                                                                                                                                                                                   
         
         # Ideal energy yield under STC conditions and temperature corrected
         E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)  
@@ -306,6 +306,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                  round(float(initCellTemperature.tcell),2),
                  temp_amb,
                  round(electrical_yield.annual_energy, 2),
+                 round(electrical_yield.power_ac, 2),
                  int(electrical_yield.effective_irradiance),
                  efficency,
                  E_ideal_STC,
@@ -416,7 +417,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
             # Bemessungsleitungs Temperaturanpassungsfaktor Ck
             # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
             C_k_STC = 1 + (module["gamma_pmp"]/100) * (t_cooling - 25)                                                    # for STC conditions
-            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_cooling - 25.14)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect
+            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_cooling - 27.41)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect
             
             # Ideal energy yield under STC conditions and temperature corrected
             E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)  
@@ -442,6 +443,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                          round(T_PV_Temp_Model,2),
                          round(t_heatflux_out,2),
                          round(electrical_yield_new.annual_energy, 2),
+                         round(electrical_yield.power_ac, 2),
                          int(electrical_yield_new.effective_irradiance),
                          efficency_New,
                          E_ideal_STC,
@@ -540,7 +542,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
 "_________Saving results in excel_____________"
 
-column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
+column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0

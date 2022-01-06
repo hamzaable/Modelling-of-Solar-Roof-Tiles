@@ -215,7 +215,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:24]):   # One Year Sim.: [0:8759]
+for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
 
     "_______Looping through excel rows_______"

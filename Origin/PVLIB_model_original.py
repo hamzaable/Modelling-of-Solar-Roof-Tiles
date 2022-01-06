@@ -49,7 +49,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "Cells_in_Series": 
           "A2": -0.002848, "A3": -0.0001439, "A4": 0.00002219, "B0": 1.0287, "B1": -0.0108 , 
           "B2": 0.001, "B3": -4E-05 , "B4": 5E-07, "B5": -3E-09, "DTC": 3, "FD": 1, "A": -3.47, 
           "B": -0.0594, "C0": 1, "C1": 0, "C2": 0.912848952156834, "C3": 0.0582212364987667, 
-          "C4": 1, "C5": 0, "C6": 1, "C7": 0} # B parameters assessed via regression of I AM modifier values
+          "C4": 1, "C5": 0, "C6": 1, "C7": 0, "celltype": "monoSi", "gamma_pmp": -0.3792} # B parameters assessed via regression of I AM modifier values
 
 # =============================================================================
 # #Alberino P
@@ -63,7 +63,7 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "Cells_in_Series": 
 #           "C4": 1, "C5": 0, "C6": 1, "C7": 0}
 
 class Photovoltaic():
-         def __init__(self, latitude, longitude, altitude, timezone, time, dni, ghi, dhi, temp_amb, wind_amb, pressure):
+         def __init__(self, latitude, longitude, altitude, timezone, time, dni, ghi, dhi, temp_amb, wind_amb, pressure, module_number):
             
             self.temperature_model_parameters = pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS['sapm']['close_mount_glass_glass']
                            
@@ -72,6 +72,8 @@ class Photovoltaic():
             self.clearsky_dni = dni
             self.clearsky_ghi = ghi
             self.clearsky_dhi = dhi
+            
+            self.module_number = module_number
                 
             self.solpos = pvlib.solarposition.get_solarposition(self.times, latitude, longitude)
             
@@ -96,6 +98,7 @@ class Photovoltaic():
                                             temp_amb, wind_amb,
                                             -2.98,-0.0471,1)
             
+            
             self.effective_irradiance = pvlib.pvsystem.sapm_effective_irradiance(
             self.total_irrad['poa_direct'], self.total_irrad['poa_diffuse'],
             self.am_abs, self.aoi, module)
@@ -106,15 +109,15 @@ class Photovoltaic():
             #Estimates parameters for the CEC single diode model (SDM) using the SAM SDK
             #For Details on the single module specs see module definition in SDP.py 
             self.mp_fit_cec_sam = pvlib.ivtools.sdm.fit_cec_sam(
-                self.module['celltype'],                                        
-                v_mp=self.module['Vmpo'], 
-                i_mp=self.module['Impo'],                                       
-                v_oc=self.module['Voco'], 
-                i_sc=self.module['Isco'],
-                alpha_sc=self.module['Aisc'], 
-                beta_voc=self.module['Bvoco'], 
-                gamma_pmp=self.module['gamma_pmp'], 
-                cells_in_series=self.module['Cells_in_Series'],
+                module['celltype'],                                        
+                v_mp=module['Vmpo'], 
+                i_mp=module['Impo'],                                       
+                v_oc=module['Voco'], 
+                i_sc=module['Isco'],
+                alpha_sc=module['Aisc'], 
+                beta_voc=module['Bvoco'], 
+                gamma_pmp=module['gamma_pmp'], 
+                cells_in_series=module['Cells_in_Series'],
                 temp_ref=25)
             
                                 
@@ -122,7 +125,7 @@ class Photovoltaic():
             self.single_diod_parameters = pvlib.pvsystem.calcparams_desoto(
                 self.effective_irradiance, 
                 self.tcell,                                                     # cell temperature 
-                alpha_sc=self.module['Aisc'],                                   # See SDP.py
+                alpha_sc=module['Aisc'],                                   # See SDP.py
                 a_ref=self.mp_fit_cec_sam[4],                                   # The product of the usual diode ideality factor n (unitless), number of cells in series, and cell thermal voltage at reference conditions [V]
                 I_L_ref=self.mp_fit_cec_sam[0],                                 # The light-generated current (or photocurrent) at reference conditions [A]
                 I_o_ref=self.mp_fit_cec_sam[1],                                 # The dark or diode reverse saturation current at reference conditions [A]

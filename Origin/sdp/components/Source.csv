@@ -1,0 +1,14 @@
+label;comp_type;busses;bus_param;bus_P_ref;bus_char;bus_base;design;offdesign;design_path;local_design;local_offdesign
+to collector;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_0;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_1;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_2;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_3;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_4;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_5;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_6;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_7;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_8;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_9;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_10;Source;[];[];[];[];[];[];[];nan;False;False
+sdp_Source_11;Source;[];[];[];[];[];[];[];nan;False;False

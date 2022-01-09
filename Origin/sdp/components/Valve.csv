@@ -1,0 +1,13 @@
+label;comp_type;busses;bus_param;bus_P_ref;bus_char;bus_base;design;offdesign;design_path;local_design;local_offdesign;pr;pr_set;pr_var;zeta;zeta_set;zeta_var;dp_char;dp_char_set;dp_char_param
+sdp_Valve_0;Valve;[];[];[];[];[];[];[];nan;False;False;0.9995138233496602;False;False;76252360.20961882;False;False;0x000001897F8EF550;False;m
+sdp_Valve_1;Valve;[];[];[];[];[];[];[];nan;False;False;0.99901662184116;False;False;154195504.86825192;False;False;0x000001897F8EF250;False;m
+sdp_Valve_2;Valve;[];[];[];[];[];[];[];nan;False;False;0.9985081726168069;False;False;233861732.9164501;False;False;0x000001897F8EFCD0;False;m
+sdp_Valve_3;Valve;[];[];[];[];[];[];[];nan;False;False;0.9979882546237758;False;False;315282926.6594792;False;False;0x000001897F8EF820;False;m
+sdp_Valve_4;Valve;[];[];[];[];[];[];[];nan;False;False;0.9974566483995967;False;False;398490581.73661065;False;False;0x000001897F8EFE80;False;m
+sdp_Valve_5;Valve;[];[];[];[];[];[];[];nan;False;False;0.996913135874451;False;False;483515834.30084187;False;False;0x000001897F8EFFD0;False;m
+sdp_Valve_6;Valve;[];[];[];[];[];[];[];nan;False;False;0.9963575001883882;False;False;570389485.707197;False;False;0x000001897F8EF370;False;m
+sdp_Valve_7;Valve;[];[];[];[];[];[];[];nan;False;False;0.9957895255218013;False;False;659142024.9705733;False;False;0x000001897F8EFCA0;False;m
+sdp_Valve_8;Valve;[];[];[];[];[];[];[];nan;False;False;0.995208996937704;False;False;749803649.2220927;False;False;0x000001897F8EF670;False;m
+sdp_Valve_9;Valve;[];[];[];[];[];[];[];nan;False;False;0.9946157002345246;False;False;842404282.3649286;False;False;0x000001897F8EF580;False;m
+sdp_Valve_10;Valve;[];[];[];[];[];[];[];nan;False;False;0.9940094218082773;False;False;936973592.1070826;False;False;0x000001897F8EF310;False;m
+sdp_Valve_11;Valve;[];[];[];[];[];[];[];nan;False;False;0.9933899485231089;False;False;1033541005.527188;False;False;0x000001897F8EFAC0;False;m

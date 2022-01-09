@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 ##########
 from PVLIB_model_original import Photovoltaic
-from TESPy_model_original import SDP_sucking
+from TESPy_model_original_updated import SDP_sucking
 ##########
 start = "01-01-{} 00:00".format(str(2019))
 end = "31-12-{} 23:00".format(str(2019))
@@ -54,12 +54,13 @@ house_data["thermal_cons"] = house_data_read.thermal_cons
 
 num_sdp_series=12
 num_sdp_parallel=16     # Only 12 for tespy calculations
+num_sdp_parallel_thermalmodel = 12
 module_number = num_sdp_series*num_sdp_parallel
 
 #####
 #Thermal initialization
 #####
-sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
+sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel_thermalmodel,
                   sdp_in_series=num_sdp_series)
 
 
@@ -80,7 +81,7 @@ df1= []
 
 countNonZero = 0
 
-for i in tqdm(pv_data.index[0:8759]):
+for i in tqdm(pv_data.index[0:48]):
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]
     wind_amb = pv_data.wind_speed[i]
@@ -109,7 +110,7 @@ electrical_data.to_excel(r'Results1.xlsx')
 y=0
 df = []
 df1= []
-for i in tqdm(pv_data.index[0:8759]):
+for i in tqdm(pv_data.index[0:48]):
     time = pv_data.DateTimeIndex[i]    
     E_sdp = (0.93*(electrical_data.Effective_Irradiance[i]*0.10)-(electrical_data.Power[i]))/0.10 
     Tamb = pv_data.temp_air[i]

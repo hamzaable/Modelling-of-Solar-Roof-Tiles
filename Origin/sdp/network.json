@@ -1,0 +1,24 @@
+{
+    "m_unit": "kg / s",
+    "m_range": [
+        0.0001,
+        11.0
+    ],
+    "p_unit": "bar",
+    "p_range": [
+        0.9,
+        1.02
+    ],
+    "h_unit": "J / kg",
+    "h_range": [
+        0.0,
+        100000.0
+    ],
+    "T_unit": "C",
+    "x_unit": "-",
+    "v_unit": "m3 / s",
+    "s_unit": "J / kgK",
+    "fluids": {
+        "air": "HEOS"
+    }
+}

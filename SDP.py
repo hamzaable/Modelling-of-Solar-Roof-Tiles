@@ -168,8 +168,9 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 "______TESPy Model Parameters_________"
 
-num_sdp_series = 12                                                             # Changed from 12 to 2 for test purpose
-num_sdp_parallel = 16                                                         # Changed from 38 to 1 for test purpose
+num_sdp_series = 96                                                             # Changed from 12 to 2 for test purpose
+num_sdp_parallel = 2                                                         # Changed from 38 to 1 for test purpose
+num_sdp_series_thermalmodel  = 12
 num_sdp_parallel_thermalmodel = 12                                         
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
@@ -186,7 +187,7 @@ E_sdp_Cooling = 0
 # Thermal initialization
 #####
 sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel_thermalmodel,
-                  sdp_in_series=num_sdp_series,
+                  sdp_in_series=num_sdp_series_thermalmodel,
                   #ks=ks
                   )
 

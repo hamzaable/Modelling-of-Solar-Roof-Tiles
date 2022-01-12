@@ -168,8 +168,10 @@ mass_flow_loss.insert(0, 'SDP', first_c)
 
 "______TESPy Model Parameters_________"
 
-num_sdp_series = 12                                                             # Changed from 12 to 2 for test purpose
-num_sdp_parallel = 16                                                           # Changed from 38 to 1 for test purpose
+num_sdp_series = 96                                                             # Changed from 12 to 2 for test purpose
+num_sdp_parallel = 2                                                           # Changed from 38 to 1 for test purpose
+num_sdp_series_thermalmodel = 12
+num_sdp_parallel_thermalmodel = 12
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
 mass_flow = 0.0094080 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
@@ -184,8 +186,8 @@ E_sdp_Cooling = 0
 #####
 # Thermal initialization
 #####
-sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel,
-                  sdp_in_series=num_sdp_series,
+sdp = SDP_sucking(sdp_in_parallel=num_sdp_parallel_thermalmodel,
+                  sdp_in_series=num_sdp_series_thermalmodel,
                   #ks=ks
                   )
 
@@ -417,11 +419,7 @@ for i in tqdm(pv_data.index[0:24]):   # One Year Sim.: [0:8759]
             # Bemessungsleitungs Temperaturanpassungsfaktor Ck
             # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
             C_k_STC = 1 + (module["gamma_pmp"]/100) * (t_cooling - 25)                                                    # for STC conditions
-<<<<<<< HEAD
-            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_cooling - 28.03)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect
-=======
             C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_cooling - 27.41)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect
->>>>>>> parent of ba5b4d5 (Update SDP.py)
             
             # Ideal energy yield under STC conditions and temperature corrected
             E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)  
@@ -554,20 +552,6 @@ div = len(electrical_data_New[electrical_data_New["Effective Irradiance [W/m^2]"
 
 electrical_data_New.loc['Total'] = electrical_data_New.select_dtypes(np.number).sum()  # finding total number of rows
 electrical_data_New.loc['Average'] = electrical_data_New.loc['Total']/countNonZero
-
-"""
-electrical_data_New.loc['Averages'] = electrical_data_New.select_dtypes(np.number).sum()
-electrical_data_New.loc['Averages'] = electrical_data_New.divide(electrical_data_New, axis={"Effective Irradiance [W/m^2]", 
-                     "Performance Ratio STC[-]", 
-                     "Performance Ratio eq [-]",
-                     "spez. elec. energy yield [kWh/kWp]",
-                     "Autarky rate [%]",
-                     "HP_COP [-]",
-                     "HP_Thermal[Wh]"})
-
-electrical_data_New['Averages'] = electrical_data_New.loc[['Averages'], ['Effective Irradiance [W/m^2]']].div(div)
-electrical_data_New.loc['Averages'] = electrical_data_New.div(div, level=3)
-"""
 
 pd.set_option('display.max_colwidth', 40)
 

@@ -145,3 +145,4 @@ sdp/components/Valve.csv
 sdp/connections.csv
 *.xlsx
 *.csv
+/sdp/

@@ -97,7 +97,8 @@ class Photovoltaic():
         
         self.effective_irradiance  = self.F1 * (self.total_irrad['poa_direct'] * self.IAM_mod_dir 
                                                 + self.IAM_mod_diff[0] * self.total_irrad['poa_sky_diffuse']
-                                                + self.IAM_mod_diff[1] * self.total_irrad['poa_ground_diffuse'])   
+                                                + self.IAM_mod_diff[1] * self.total_irrad['poa_ground_diffuse'])
+
                     
         """
             

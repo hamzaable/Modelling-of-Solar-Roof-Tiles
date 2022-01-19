@@ -91,13 +91,13 @@ for i in tqdm(pv_data.index[0:8759]):
     dhi = pv_data.dhi[i]
     
     electrical_yield= Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone, time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i], temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i], module_number=module_number)
-    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy,2), int(electrical_yield.effective_irradiance)]
+    df1 = [i, time, temp_amb, round(electrical_yield.annual_energy,2), int(electrical_yield.effective_irradiance), round(electrical_yield.tcell.item(),2)]
     df.append(df1)
     
     if electrical_yield.effective_irradiance.item() > 0:
         countnonzero+=1
 
-column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance"]
+column_values = ["Index","Time","Tamb","Power", "Effective_Irradiance", "TModule"]
 electrical_data = pd.DataFrame(data=df, columns = column_values)
 electrical_data.fillna(0)
 electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()

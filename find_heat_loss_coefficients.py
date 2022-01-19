@@ -5,12 +5,14 @@ Created on Fri Nov 12 12:55:55 2021
 @author: marius bartkowski
 """
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from scipy.optimize import curve_fit
 import seaborn as sns
 import numpy as np
 import pandas as pd
 import os
 import math
+from  matplotlib.ticker import FuncFormatter
 
 # Path handling
 # Print the current working directory
@@ -35,24 +37,9 @@ meta = weather_data.reset_index().merge(can_data.reset_index()).drop(columns='in
                                                                                                       'Global Irradiance W/m2': 'Global_Irradiance_W_m2'
                                                                                                       })
 
-meta = meta[meta.Global_Irradiance_W_m2 > 30]                                   #filter out every datapoint below Irradiance of30 W/m2 due to unreasonable values
+meta = meta[meta.Global_Irradiance_W_m2 > 30]                                   #filter out every datapoint below Irradiance of 30 W/m2 due to unreasonable values
 
 "______________Datetime calculations_____________________"
-#Choosed an easier way because its not working
-"""
-nineteen_seventy = time.strptime('01-01-70', '%d-%m-%y')
-
-print(meta_test['Time']) #meta_test.Global_Irradiance_W_m2 > 30])
-print(meta_test[meta_test.Time])
-
-con_time = pd.to_datetime(meta_test['Time'])
-con_time = con_time.dt.time
-
-con_time.dtypes
-
-time_str = str(meta_test['Time'])
-meta_test.dtypes
-"""
 
 # Really ugly made data selection
 meta.reset_index(inplace=True, drop=True) 
@@ -88,27 +75,16 @@ coeff, pcov = curve_fit(func, dt, yData, InitialGuess)
 
 print('Heat loss Coefficients via measurement data:\n\nc1: ', round(coeff[0], 2), '(W/m*K)\nc2: ', round(coeff[1], 2), '(W/m*K^2)')
 
-#Curve Fitting and Plotting - Not working yet
-"""
-n = len(dt)
-y = np.empty(len(dt))
-c1 = np.full(n, coeff[0])
-c2 = np.full(n, coeff[1])
-F_ta_en_arr = np.full(n, F_ta_en)
-
-for i in range(n) :
-    y[i] =   func(G[i], c1[i], c2[i])                                                                     
-    
-    
-# function set to tm = ...
-# y[i] = (math.sqrt((coeff[0]^2)+4*coeff[1]*F_ta_en*G[i])-coeff[0]+(2*coeff[1]*ta_2ms[i]))/(2*coeff[1])
-"""
 
 plt.figure()
-ax = sns.regplot(x=G, y=tm)
-plt.xlabel('Irradiance (W/m2)')
-plt.ylabel('Module Temperature (°C)')
-plt.title('Measurement values of Module Temperature over different Irradiances')
+ax = sns.regplot(x=G, y=tm, scatter_kws={"color": "black"}, line_kws={"color": "red"})
+ax.set_yticklabels(ax.get_yticks(), size = 14)
+ax.set_xticklabels(ax.get_xticks(), size = 14)
+plt.xlabel('total Irradiance on the collector plane (W/m2)', fontsize=16)
+plt.ylabel('Module Temperature (°C)', fontsize=16)
+ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: int(y)))
+#plt.title('Measurement values of Module Temperature over different Irradiances')
 
 
 # Calculating module temperature + c1 & c2 via Christian Brosig's approach
@@ -134,5 +110,40 @@ InitialGuess = [1.0, 1.0]                                                       
 coeff_tm_Sandia, pcov = curve_fit(func, dt_sandia, yData, InitialGuess)
 
 print('\n\nHeat loss Coefficients via module temperature by Sandia model:\n\nc1: ', round(coeff_tm_Sandia[0], 2), '(W/m*K)\nc2: ', round(coeff_tm_Sandia[1], 2), '(W/m*K^2)')
+
+"___________Collector efficiency____________________"
+
+col_name = "η SRT ({} W/m2)"
+
+G_ref = 1000 #in [W/m^2]
+dt_eff = np.arange(0, 161, 1)
+
+df_eta_SRT = pd.DataFrame(data= dt_eff, columns={'dt [°C]'})  
+
+while(G_ref>0):
+    list_eta_SRT  = []
+    for i in range(len(dt_eff)):
+        eta_SRT = F_ta_en - (round(coeff[0], 2) * (dt_eff[i]/G_ref)) - (round(coeff[1], 2)*(np.power((dt_eff[i]), 2)/G_ref))
+        list_eta_SRT.append(eta_SRT)
+        
+    df_eta_SRT[col_name.format(str(G_ref))] = list_eta_SRT
+    G_ref-=200
+
+plt.figure(figsize=(8, 6))
+cmap = cm.get_cmap('viridis')
+ax = df_eta_SRT.plot(x="dt [°C]", y=["η SRT (1000 W/m2)", "η SRT (800 W/m2)", "η SRT (600 W/m2)", "η SRT (400 W/m2)", "η SRT (200 W/m2)"],linewidth=3.0, cmap=cmap)
+params = {'mathtext.default': 'regular' } 
+plt.rcParams.update(params)
+plt.xlabel('$T_{m} - T_{a}  [°C]$', fontsize=15)
+plt.ylabel('collector efficiency η [-]', fontsize=15)
+plt.legend(fontsize=12)
+ax.set_xlim(0,60)
+ax.set_yticklabels(ax.get_yticks(), size = 14)
+ax.set_xticklabels(ax.get_xticks(), size = 14)
+ax.set_ylim(0,1.0)
+ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: int(x)))
+ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: round(float(y), 1)))
+
+
 
 

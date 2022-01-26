@@ -12,6 +12,8 @@ from PVLIB_model import Photovoltaic
 from PVLIB_model import cellTemperature
 from TESPy_model import SDP_sucking
 from heat_pump import HeatPump
+from SDP_validate import MeasurementDataImport
+
 #from TESPy_model import interpolate_ks_mloss
 
 ##########
@@ -98,8 +100,14 @@ module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi
 # =============================================================================
 
 "_____________Data Imports_____________"
-"Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
+# Import Measurement Data 
+MeasurementData = MeasurementDataImport()
+mdata_AC_power, mdata = MeasurementData.ReturnMeasurementData()
+print("\nImport finished.\n")
 
+# Import Weather Data Set
+"Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
+"""
 dwd_data = pd.read_excel(os.path.join("Imports", r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx'))  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
@@ -127,7 +135,7 @@ house_data["DateTimeIndex"] = house_data_read.date
 house_data["DateTimeIndex"] = pd.to_datetime(house_data["DateTimeIndex"])
 house_data["elec_cons"] = house_data_read.elec_cons
 house_data["thermal_cons"] = house_data_read.thermal_cons
-
+"""
 "______Import_Operating_strategies & Mass_Flow_Loss_values____________"
 
 #Operating Strategies
@@ -217,18 +225,20 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
+for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
 
 
     "_______Looping through excel rows_______"
     "Aligning excel row values to variable"
 
-    time = pv_data.DateTimeIndex[i]
-    temp_amb = pv_data.temp_air[i]
-    wind_amb = pv_data.wind_speed[i]
-    ghi = pv_data.ghi[i]
-    dni = pv_data.dni[i]
-    dhi = pv_data.dhi[i]
+    time = mdata.Zeitstempel[i]
+    temp_amb = mdata.temp[i]
+    wind_amb = mdata.wind_speed[i]
+    ghi = mdata.GHI[i]
+    dni = mdata.DNI[i]
+    dhi = mdata.DHI[i]
+    pr = mdata.pr[i]
+    
 
     "______Calculating ks value & mass flow leakage via interpolation______"
 
@@ -543,6 +553,13 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 #df_test_elecindicators_full = pd.DataFrame(df_test_elecindicators_full)     
 
 "_________Saving results in excel_____________"
+
+
+"""
+mdata['Zeitstempel'] = pd.to_datetime(mdata['Zeitstempel'])
+mdata.index = mdata['Zeitstempel']
+test3 = mdata.resample('15T').mean()
+"""
 
 column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data

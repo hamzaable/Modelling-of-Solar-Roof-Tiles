@@ -175,7 +175,7 @@ num_sdp_parallel_thermalmodel = 12
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
 mass_flow = 0.0094080 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
-P_HP = 700                                                                      #nominal power of the heat Pump in Watts, taken as constant
+P_HP = 3500                                                                      #nominal power of the heat Pump in Watts, taken as constant
 
 # Allowed Value range for mass flow is:
 # 0.0646 to 0.00306 kg/s (due to interpolation boundaries)
@@ -389,14 +389,14 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                                             temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
                                             pressure=pv_data.pressure[i], cell_temp=t_cooling)
         "________Calculating the Heat Pump COP_with Cooling effect_______"
-        heatPump = HeatPump(0.068)
+        heatPump = HeatPump(P_HP) 
         heatPumpCOP = round(heatPump.calc_cop_ruhnau(50, t_heatflux_out, "ashp"), 2)
         heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(50, pv_data.temp_air[i], "ashp"), 2)
 
         "_______Calculating Heat Pump thermal Output_______"
         
-        heatPumpThermal = round(68 * heatPumpCOP, 2)
-        heatPumpThermal_ref = round(68 * heatPumpCOP_ref, 2)
+        heatPumpThermal = round(P_HP * heatPumpCOP, 2)
+        heatPumpThermal_ref = round(P_HP * heatPumpCOP_ref, 2)
 
         if int(electrical_yield_new.effective_irradiance) == 0:
             efficency_New = 0

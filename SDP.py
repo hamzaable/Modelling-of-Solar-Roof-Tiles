@@ -124,7 +124,7 @@ pv_data["ghi"] = dwd_data.poa_global                                            
 pv_data["temp_air"] = dwd_data.temp
 pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
-
+"""
 "________Hourly house demand (elec_cons , thermal_cons)________"
 house_data_read = pd.read_excel(os.path.join("Imports", r'house_demand.xlsx'))
 
@@ -135,7 +135,7 @@ house_data["DateTimeIndex"] = house_data_read.date
 house_data["DateTimeIndex"] = pd.to_datetime(house_data["DateTimeIndex"])
 house_data["elec_cons"] = house_data_read.elec_cons
 house_data["thermal_cons"] = house_data_read.thermal_cons
-"""
+
 "______Import_Operating_strategies & Mass_Flow_Loss_values____________"
 
 #Operating Strategies
@@ -316,7 +316,7 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
         PR_annual_eq = round(electrical_yield.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)
                 
         # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
-        autarky_rate = round((float(electrical_yield.power_ac) / house_data["elec_cons"][i])*100, 2)
+        autarky_rate = 0
                     
         #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), E_ideal, PR, Y_F, autarkie_rate]
         
@@ -361,9 +361,9 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
     else:
         "_______SDP Calculations to find t_out, fan in , mass flow out"
         t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
-            ambient_temp=pv_data.temp_air[i],
+            ambient_temp=temp_amb,
             absorption_incl=E_sdp_New,
-            inlet_temp=pv_data.temp_air[i],
+            inlet_temp=temp_amb,
             mass_flow=mass_flow,
             print_res=False,
             ks_SRT=ks_SRT,
@@ -389,10 +389,10 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
         totalLoops = totalLoops + 1
         newCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
                                              m_azimut=m_azimut, m_tilt=m_tilt,
-                                             time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                             dhi=pv_data.dhi[i],
+                                             time=time, dni=dni, ghi=ghi,
+                                             dhi=dhi,
                                              albedo=albedo, irrad_model=irrad_model,
-                                             wind_amb=pv_data.wind_speed[i],
+                                             wind_amb=wind_amb,
                                              temp_avg=t_cooling)
 
         t_avg_old = t_cooling
@@ -403,15 +403,15 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
                                             timezone=timezone,
                                             m_azimut=m_azimut, m_tilt=m_tilt,
                                             module_number=num_sdp_series * num_sdp_parallel,
-                                            time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                            dhi=pv_data.dhi[i],
+                                            time=time, dni=dni, ghi=ghi,
+                                            dhi=dhi,
                                             albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                            temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                            pressure=pv_data.pressure[i], cell_temp=t_cooling)
+                                            temp_amb=temp_amb, wind_amb=wind_amb,
+                                            pressure=pr, cell_temp=t_cooling)
         "________Calculating the Heat Pump COP_with Cooling effect_______"
         heatPump = HeatPump(P_HP) 
         heatPumpCOP = round(heatPump.calc_cop_ruhnau(50, t_heatflux_out, "ashp"), 2)
-        heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(50, pv_data.temp_air[i], "ashp"), 2)
+        heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(50, temp_amb, "ashp"), 2)
 
         "_______Calculating Heat Pump thermal Output_______"
         
@@ -453,7 +453,7 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
             PR_annual_eq = round(electrical_yield_new.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)
             
             # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
-            autarky_rate = round((float(electrical_yield_new.power_ac) / house_data["elec_cons"][i])*100, 2)
+            autarky_rate = 0
                         
         #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), C_k_STC, E_ideal_STC, PR_STC, C_k_annual, Y_F, PR_annual_eq, autarky_rate]
         
@@ -496,9 +496,9 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
         else:
 
             t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
-                ambient_temp=pv_data.temp_air[i],
+                ambient_temp=temp_amb,
                 absorption_incl=E_sdp_Cooling,
-                inlet_temp=pv_data.temp_air[i],
+                inlet_temp=temp_amb,
                 mass_flow=mass_flow,
                 print_res=False,
                 ks_SRT=ks_SRT,
@@ -563,13 +563,7 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
 #df_test_elecindicators_full = pd.DataFrame(df_test_elecindicators_full)     
 
 "_________Saving results in excel_____________"
-
-
-"""
-mdata['Zeitstempel'] = pd.to_datetime(mdata['Zeitstempel'])
-mdata.index = mdata['Zeitstempel']
-test3 = mdata.resample('15T').mean()
-"""
+"_________Original resolution__________"
 
 column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
@@ -596,6 +590,55 @@ column_values = ["Index", "Time", "E_sdp_eff", "P_fan", "M_out", "HeatFlux_[kW/m
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
+thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
+pd.set_option('display.max_colwidth', 8)
+# print(thermal_data)
+
+Efficiency = thermal_data.loc["Total", "HeatFlux_[kW/m^2]"] / thermal_data.loc["Total", "E_sdp_eff"]
+print(f'Total Power difference with and without cooling effect {round(totalPowerDiff, 2)} Watt hours')
+print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
+complete_data = pd.merge(electrical_data_New, thermal_data)
+complete_data.to_excel(os.path.join("Exports", r'CompleteResult.xlsx'))
+
+complete_data = pd.merge(electrical_data, thermal_data)
+complete_data.to_excel(os.path.join("Exports", r'CompleteResultWithoutCoolingEffect.xlsx'))
+
+"_________15 min resolution__________"
+
+"""
+mdata['Zeitstempel'] = pd.to_datetime(mdata['Zeitstempel'])
+mdata.index = mdata['Zeitstempel']
+test3 = mdata.resample('15T').mean()
+"""
+
+# Assigning df all data to new varaible electrical data
+electrical_data_New_15T = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
+electrical_data_New_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
+electrical_data_New_15T.index=electrical_data_New['Time']
+electrical_data_New_15T.resample('15T').mean()
+div = len(electrical_data_New_15T[electrical_data_New_15T["Effective Irradiance [W/m^2]"] > 0])
+
+electrical_data_New_15T.loc['Total'] = electrical_data_New.select_dtypes(np.number).sum()  # finding total number of rows
+electrical_data_New_15T.loc['Average'] = electrical_data_New.loc['Total']/countNonZero
+
+pd.set_option('display.max_colwidth', 40)
+
+
+electrical_data_15T = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
+electrical_data_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
+electrical_data_15T.index=electrical_data_New['Time']
+electrical_data_15T.resample('15T').mean()
+
+electrical_data_15T.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
+electrical_data_15T.loc['Average'] = electrical_data.loc['Total']/countNonZero  # finding total number of rows
+pd.set_option('display.max_colwidth', 40)
+
+
+thermal_data_15T = pd.DataFrame(data=dfThermalMain, columns=column_values)
+thermal_data_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
+electrical_data_15T.index=electrical_data_New['Time']
+electrical_data_15T.resample('15T').mean()
+thermal_data_15T.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
 thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
 # print(thermal_data)

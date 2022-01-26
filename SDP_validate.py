@@ -54,6 +54,7 @@ class MeasurementDataImport():
         mdata =  mdata_atmospheric_conditions
         mdata['th_heatflux_kW'] = mdata_technical_conditions.Th_Leistung_1_kW
         mdata['mass_flow'] = mdata_technical_conditions.Massenstrom_1_kgh
+        mdata['mass_flow'] = mdata['mass_flow']/(3600*12)                               #conversion from kg/h to kg/s for one SRT string
         mdata['HP_cons_elec_kW'] = mdata_technical_conditions.Strom_WP_  
         mdata['Voltage_left_roof_part_V'] = Spannung_string_ohneMPPT
         mdata['Current_left_roof_part_A'] = mdata_technical_conditions["Strom_A_475"]

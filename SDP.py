@@ -604,13 +604,6 @@ complete_data = pd.merge(electrical_data, thermal_data)
 complete_data.to_excel(os.path.join("Exports", r'CompleteResultWithoutCoolingEffect.xlsx'))
 
 "_________15 min resolution__________"
-
-"""
-mdata['Zeitstempel'] = pd.to_datetime(mdata['Zeitstempel'])
-mdata.index = mdata['Zeitstempel']
-test3 = mdata.resample('15T').mean()
-"""
-
 # Assigning df all data to new varaible electrical data
 electrical_data_New_15T = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 

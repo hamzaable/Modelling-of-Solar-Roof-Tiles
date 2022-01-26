@@ -223,6 +223,8 @@ dfThermalSub = [] # Thermal Effect of one row
 df_test_elecindicators_full = [] # testing performance indicators
 totalPowerDiff = 0
 countNonZero = 0
+sum_m_exceeded = 0
+sum_m_below = 0
 
 #for i in tqdm(pv_data.index[8:10]):
 for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
@@ -238,36 +240,44 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
     dni = mdata.DNI[i]
     dhi = mdata.DHI[i]
     pr = mdata.pr[i]
+    mass_flow=mdata.mass_flow[i]
     
 
     "______Calculating ks value & mass flow leakage via interpolation______"
 
     if mass_flow_temp != mass_flow:
-        m_loss_offdesign, ks_SRT, mass_flow_temp = sdp.interpolate_ks_mloss(i=i,
-                                                              op_strategy=op_strategy,
-                                                              os_name=os_name,
-                                                              mass_flow=mass_flow,
-                                                              mass_flow_loss=mass_flow_loss,
-                                                              mass_flow_temp=mass_flow_temp)
+        m_loss_offdesign, ks_SRT, mass_flow_temp, m_exceeded, m_below = sdp.interpolate_ks_mloss(i=i,
+                                                                              op_strategy=op_strategy,
+                                                                              os_name=os_name,
+                                                                              mass_flow=mass_flow,
+                                                                              mass_flow_loss=mass_flow_loss,
+                                                                              mass_flow_temp=mass_flow_temp)
         m_loss_offdesign = m_loss_offdesign.set_axis(['5_1_dpx'], axis=1, inplace=False)
-
+        sum_m_exceeded += m_exceeded
+        sum_m_below += m_below 
 
     "______Getting the initial cell temperature______"
     initCellTemperature = cellTemperature(latitude=latitude, longitude=longitude,
                                           m_azimut=m_azimut, m_tilt=m_tilt,
-                                          time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
-                                          dhi=pv_data.dhi[i],
-                                          albedo=albedo, irrad_model=irrad_model,
-                                          wind_amb=pv_data.wind_speed[i],
-                                          temp_avg=pv_data.temp_air[i])
+                                          time=time, 
+                                          dni=dni, 
+                                          ghi=ghi,
+                                          dhi=dhi,
+                                          albedo=albedo, 
+                                          irrad_model=irrad_model,
+                                          wind_amb=wind_amb,
+                                          temp_avg=temp_amb)
 
 
     "________Finding the electrical yield & Solar data based in initial cell temperature_______"
     electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
                                     m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
-                                    time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
+                                    time=time, 
+                                    dni=dni, 
+                                    ghi=ghi,
+                                    dhi=dhi,
                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                    temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i],cell_temp=initCellTemperature.tcell)
+                                    temp_amb=temp_amb, wind_amb=wind_amb,pressure=pr,cell_temp=initCellTemperature.tcell)
 
     "_______Making an Array of results got from electrical_yieldcmd_______"
     if int(electrical_yield.effective_irradiance) == 0 :
@@ -605,6 +615,9 @@ Jahresarbeitszahl_ref = round(electrical_data_New.select_dtypes(np.number).sum()
 Jahresarbeitszahl = round(electrical_data_New.select_dtypes(np.number).sum().loc['HP_Thermal[Wh]'] / (P_HP * len(electrical_data_New)), 2) 
 print("\nAnnual performance factor (Jahresarbeitzahl) of the heat Pump: ", Jahresarbeitszahl, "Annual Performance factor reference of the heat Pump with Tamb: ", Jahresarbeitszahl_ref)
 
+"_____Mass_flow values out of bounce______"
+print("\n\nExceeded Mass Flow values: ", sum_m_exceeded)
+print("\nMass Flow values below range: ", sum_m_below)
 
 "________Plotting______"
 

@@ -227,7 +227,7 @@ sum_m_exceeded = 0
 sum_m_below = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
+for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
 
 
     "_______Looping through excel rows_______"
@@ -551,7 +551,7 @@ for i in tqdm(mdata.index[0:24]):   # Full Day Sim.: [0:5906]
         thermal_efficency = 0
     else:
         thermal_efficency = round((flux * 1000*100) / int(electrical_yield_new.effective_irradiance),2)
-    dfThermalSub = [i, time, round(E_sdp_Cooling, 2), p_fan, m_out, flux, thermal_efficency, status, elec_parameter,
+    dfThermalSub = [i, time, round(E_sdp_Cooling, 2), p_fan, mass_flow*num_sdp_parallel_thermalmodel, flux, thermal_efficency, status, elec_parameter,
                     thermal_parameter]
     dfThermalMain.append(dfThermalSub)
 
@@ -586,7 +586,7 @@ pd.set_option('display.max_colwidth', 40)
 
 
 
-column_values = ["Index", "Time", "E_sdp_eff", "P_fan", "M_out", "HeatFlux_[kW/m^2]","Thermal Efficency","status",
+column_values = ["Index", "Time", "E_sdp_eff", "P_fan", "mass_flow kg/s", "HeatFlux_[kW/m^2]","Thermal Efficency","status",
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
@@ -613,45 +613,23 @@ test3 = mdata.resample('15T').mean()
 
 # Assigning df all data to new varaible electrical data
 electrical_data_New_15T = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
-electrical_data_New_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
-electrical_data_New_15T.index=electrical_data_New['Time']
-electrical_data_New_15T.resample('15T').mean()
-div = len(electrical_data_New_15T[electrical_data_New_15T["Effective Irradiance [W/m^2]"] > 0])
-
-electrical_data_New_15T.loc['Total'] = electrical_data_New.select_dtypes(np.number).sum()  # finding total number of rows
-electrical_data_New_15T.loc['Average'] = electrical_data_New.loc['Total']/countNonZero
-
-pd.set_option('display.max_colwidth', 40)
 
 
-electrical_data_15T = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
-electrical_data_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
-electrical_data_15T.index=electrical_data_New['Time']
-electrical_data_15T.resample('15T').mean()
+complete_data_15T = pd.merge(electrical_data_New_15T, thermal_data)
+complete_data_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
+complete_data_15T.index=complete_data_15T['Time']
+complete_data_15T = complete_data_15T.resample('15T').mean()
 
-electrical_data_15T.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
-electrical_data_15T.loc['Average'] = electrical_data.loc['Total']/countNonZero  # finding total number of rows
-pd.set_option('display.max_colwidth', 40)
-
-
-thermal_data_15T = pd.DataFrame(data=dfThermalMain, columns=column_values)
-thermal_data_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
-electrical_data_15T.index=electrical_data_New['Time']
-electrical_data_15T.resample('15T').mean()
-thermal_data_15T.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
-thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
-pd.set_option('display.max_colwidth', 8)
-# print(thermal_data)
-
-Efficiency = thermal_data.loc["Total", "HeatFlux_[kW/m^2]"] / thermal_data.loc["Total", "E_sdp_eff"]
+Efficiency = complete_data.loc["Total", "HeatFlux_[kW/m^2]"] / complete_data.loc["Total", "E_sdp_eff"]
 print(f'Total Power difference with and without cooling effect {round(totalPowerDiff, 2)} Watt hours')
 print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
-complete_data = pd.merge(electrical_data_New, thermal_data)
-complete_data.to_excel(os.path.join("Exports", r'CompleteResult.xlsx'))
 
-complete_data = pd.merge(electrical_data, thermal_data)
-complete_data.to_excel(os.path.join("Exports", r'CompleteResultWithoutCoolingEffect.xlsx'))
+div = len(complete_data_15T[complete_data_15T["Effective Irradiance [W/m^2]"] > 0])
+complete_data_15T.loc['Total'] = complete_data_15T.select_dtypes(np.number).sum()  # finding total number of rows
+complete_data_15T.loc['Average'] = complete_data_15T.loc['Total']/div
 
+pd.set_option('display.max_colwidth', 40)
+complete_data_15T.to_excel(os.path.join("Exports", r'CompleteResult_Cooling_15T.xlsx'))
 
 "____Calculating_Jahresarbeitszahl_of the heat pump____"
 Jahresarbeitszahl_ref = round(electrical_data_New.select_dtypes(np.number).sum().loc['HP_Thermal[Wh]'] / (P_HP * len(electrical_data_New)), 2)

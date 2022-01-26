@@ -618,10 +618,17 @@ class SDP_sucking():
         mflow = [0.064616108, 0.032016786, 0.02390436, 0.015828479, 0.009407934, 0.00621843, 0.00306056]            # range of massflow values from operationg points DP3 to DP9 in kg/s
         ks_mflow = [0.000200, 0.000240, 0.000260, 0.000350, 0.000475, 0.000640, 0.000895]                              # manually estimated ks values for Operating points DP3 to DP9 [-]. These values are the frame for interpolating ks values for the given mass flow
         
+        mass_flow_original = mass_flow
+        m_exceeded = 0
+        m_below = 0
+        
         if (0.0646161 < mass_flow):
-            raise ValueError('Mass Flow value exeeds maximum value of 200 m^3/h (~ 0.0646 kg/s).')
+            mass_flow = 0.0646161
+            m_exceeded = 1
         elif (mass_flow < 0.00306056):    
-            raise ValueError('Mass Flow value is below minimum value of 10 m^3/h (0.00306 kg/s).')
+            mass_flow = 0.00306056
+            m_below = 1
+        
             
         ks_interpolate = scipy.interpolate.interp1d(mflow, ks_mflow)            # setting up interpolation function and parameters for scipy.interpolate.interp1d
         ks_interp = ks_interpolate(mass_flow)                                   # interpolate ks in dependency of the mass flow
@@ -668,6 +675,6 @@ class SDP_sucking():
             
         mass_flow_loss_interp=pd.DataFrame(mass_flow_loss_interp)
         
-        mass_flow_temp = mass_flow
+        mass_flow_temp = mass_flow_original
         
-        return mass_flow_loss_interp, ks_interp, mass_flow_temp
+        return mass_flow_loss_interp, ks_interp, mass_flow_temp, m_exceeded, m_below

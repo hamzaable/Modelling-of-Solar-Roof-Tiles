@@ -22,6 +22,8 @@ class MeasurementDataImport():
         print("\nImporting measurement Data for Atmospheric conditions ...")
         mdata_atmospheric_conditions = pd.read_excel(path, usecols = "A, H, J, L, AI, AN:AP", names=['Zeitstempel', 'wind_speed', 'temp', 'pr', 'T_inlet', 'DTI', 'DHI', 'GHI'])
         mdata_atmospheric_conditions['DNI'] = mdata_atmospheric_conditions["GHI"]-mdata_atmospheric_conditions["DHI"]
+        mdata_atmospheric_conditions['GHI'][mdata_atmospheric_conditions['GHI'] <= 0] = 0
+        mdata_atmospheric_conditions['DHI'][mdata_atmospheric_conditions['GHI'] < mdata_atmospheric_conditions['DHI']] = mdata_atmospheric_conditions['GHI']
         
         "__________Technical conditions_____________"
         mdata_technical_conditions = pd.read_excel(path, usecols = "AF:AG, AM, CC, DG, EK, FN, FQ:RA, SA:SB")

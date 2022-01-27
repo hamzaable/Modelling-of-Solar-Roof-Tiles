@@ -267,39 +267,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                 num_sdp_series * num_sdp_parallel * 0.1)) * 100 / int(electrical_yield.effective_irradiance),2)
     
     "_____Calculating_Performance_Indicators_(electrical)_Values_with_Cooling_effect_________"
-    # Calculation according to DIN EN IEC 61724-1 (VDE 0126-25-1): 2021-03 exept of the autarky rate
-        
-    if int(electrical_yield.effective_irradiance) == 0:
-        E_ideal_STC = 0
-        PR = 0 
-        C_k_STC = 0
-        PR_STC = 0
-        C_k_annual = 0
-        PR_annual_eq = 0
-        Y_F = 0
-        autarky_rate = 0
-    else:
-        # Bemessungsleitungs Temperaturanpassungsfaktor Ck
-        # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
-        C_k_STC = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()-25)                                                    # for STC conditions
-        C_k_annual = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()- 31.01)                                             # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - without cooling effect                                                                                                                                                                                   
-        
-        # Ideal energy yield under STC conditions and temperature corrected
-        E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)  
-        
-         # Final system yield (net energy yield)
-        Y_F = round((float(electrical_yield.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
-        
-        # Perforance ratio (Leistungsverhältnis), performance ratio under STC conditions and temperature corrected
-        PR = round((Y_F/(float(electrical_yield.effective_irradiance) / 1000)), 2)
-        PR_STC = round((electrical_yield.power_ac / E_ideal_STC), 2)
-        PR_annual_eq = round(electrical_yield.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)
-                
-        # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
-        autarky_rate = round((float(electrical_yield.power_ac) / house_data["elec_cons"][i])*100, 2)
-                    
-        #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), E_ideal, PR, Y_F, autarkie_rate]
-        
+
     # use t ambient for no cooling effect
     dfSubElec = [i,
                  time,
@@ -311,16 +279,8 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                  round(electrical_yield.power_ac, 2),
                  int(electrical_yield.effective_irradiance),
                  efficency,
-                 E_ideal_STC,
-                 PR,
-                 PR_STC,
-                 PR_annual_eq,
-                 Y_F,
-                 autarky_rate,
                  0,
                  0]
-
-
 
     "_______Electrical Yield for one cell_____"
     P_MP = round(electrical_yield.annual_energy, 2) / (num_sdp_series * num_sdp_parallel) #Anual Energy / total modules
@@ -347,7 +307,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
             mass_flow=mass_flow,
             print_res=False,
             ks_SRT=ks_SRT,
-            m_loss_offdesign=m_loss_offdesign,
+            m_loss_offdesign=1,
             )
         countNonZero = countNonZero + 1
 
@@ -402,41 +362,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
             efficency_New = 0
         else:
             efficency_New = round((round(electrical_yield_new.annual_energy, 2)/(num_sdp_series * num_sdp_parallel*0.1))*100/int(electrical_yield_new.effective_irradiance),2)
-            
-        "_____Calculating_Performance_Indicators_(electrical)_Values_with_Cooling_effect_________"
-        # Calculation according to DIN EN IEC 61724-1 (VDE 0126-25-1): 2021-03 exept of the autarky rate
-        
-        if int(electrical_yield_new.effective_irradiance) == 0:
-            E_ideal_STC = 0
-            PR = 0
-            C_k_STC = 0
-            PR_STC = 0
-            C_k_annual = 0
-            PR_annual_eq = 0
-            Y_F = 0
-            autarky_rate = 0
-        else:
-            # Bemessungsleitungs Temperaturanpassungsfaktor Ck
-            # with y (module["gamma_pmp"]) as relativer Höchstleistungs-Temperaturkoeffizient in 1/C from TüV Report
-            C_k_STC = 1 + (module["gamma_pmp"]/100) * (t_cooling - 25)                                                    # for STC conditions
-            C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_cooling - 28.03)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect
-            
-            # Ideal energy yield under STC conditions and temperature corrected
-            E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)  
-            
-            # Final system yield (net energy yield)
-            Y_F = round((float(electrical_yield_new.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
-            
-            # Perforance ratio (Leistungsverhältnis), performance ratio under STC conditions and temperature corrected
-            PR = round((Y_F/(float(electrical_yield_new.effective_irradiance) / 1000)), 2)
-            PR_STC = round((electrical_yield_new.power_ac / E_ideal_STC), 2)
-            PR_annual_eq = round(electrical_yield_new.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)
-            
-            # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
-            autarky_rate = round((float(electrical_yield_new.power_ac) / house_data["elec_cons"][i])*100, 2)
-                        
-        #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), C_k_STC, E_ideal_STC, PR_STC, C_k_annual, Y_F, PR_annual_eq, autarky_rate]
-        
+
         "______Saving results__________"                          
         dfSubElec_New = [i,
                          time,
@@ -448,12 +374,6 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                          round(electrical_yield.power_ac, 2),
                          int(electrical_yield_new.effective_irradiance),
                          efficency_New,
-                         E_ideal_STC,
-                         PR,
-                         PR_STC,
-                         PR_annual_eq,
-                         Y_F,
-                         autarky_rate,
                          heatPumpCOP,
                          heatPumpThermal]
 

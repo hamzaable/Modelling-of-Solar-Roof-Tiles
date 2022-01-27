@@ -214,6 +214,7 @@ sdp.init_sdp(ambient_temp=-4,
 # Electrical Yield
 ######
 
+TESPy_value_errors_in = []
 dfMainElec = [] #overall electrical results
 dfMainElecNew = [] # overall results with cooling effect
 dfSubElec = [] # Row result
@@ -360,15 +361,23 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
 
     else:
         "_______SDP Calculations to find t_out, fan in , mass flow out"
-        t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
-            ambient_temp=temp_amb,
-            absorption_incl=E_sdp_New,
-            inlet_temp=temp_amb,
-            mass_flow=mass_flow,
-            print_res=False,
-            ks_SRT=ks_SRT,
-            m_loss_offdesign=m_loss_offdesign,
-            )
+        try:
+            t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
+                ambient_temp=temp_amb,
+                absorption_incl=E_sdp_New,
+                inlet_temp=temp_amb,
+                mass_flow=mass_flow,
+                print_res=False,
+                ks_SRT=ks_SRT,
+                m_loss_offdesign=m_loss_offdesign,
+                )
+            
+        except:
+                TESPy_value_errors_in.append(i)
+                t_heatflux_out = temp_amb
+                p_fan = 0
+                m_out = 0
+                
         countNonZero = countNonZero + 1
 
     "____Finding Avg temperature for cooling effect_____"
@@ -494,16 +503,23 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
             m_out = 0
 
         else:
-
-            t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
-                ambient_temp=temp_amb,
-                absorption_incl=E_sdp_Cooling,
-                inlet_temp=temp_amb,
-                mass_flow=mass_flow,
-                print_res=False,
-                ks_SRT=ks_SRT,
-                m_loss_offdesign=m_loss_offdesign,
-            )
+            
+            try:
+                t_heatflux_out, p_fan_init, m_out_init = sdp.calculate_sdp(
+                    ambient_temp=temp_amb,
+                    absorption_incl=E_sdp_Cooling,
+                    inlet_temp=temp_amb,
+                    mass_flow=mass_flow,
+                    print_res=False,
+                    ks_SRT=ks_SRT,
+                    m_loss_offdesign=m_loss_offdesign,
+                )
+            except:
+                TESPy_value_errors_in.append(i)
+                t_heatflux_out = temp_amb
+                p_fan = 0
+                m_out = 0
+                
 
         # t_m = (temp_amb + t_out_init) / 2
         # t_avg_new = (T_PV_Temp_Model + t_m) / 2

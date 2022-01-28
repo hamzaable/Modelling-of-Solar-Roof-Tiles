@@ -14,6 +14,8 @@ import pvlib
 
 latitude = 50.934055
 longitude = 6.990349
+num_sdp_series = 96                                                             
+num_sdp_parallel = 2
 
 "_____________Data Imports_____________"
 #Importing Measurement Data from Excel
@@ -52,11 +54,6 @@ print("valid voltage sensors: ", sensor_count)
 dcpower_string_ohneMPPT = Spannung_string_ohneMPPT * mdata_technical_conditions["Strom_A_475"]
 dcpower_string_mitMPPT = Spannung_string_mitMPPT * mdata_technical_conditions["Strom_A_476"]
 
-time_conversion = 10/(60*60*1000) #1W*10sec = (1W*10*1min)/60sec = (10W*1h*1min)/(60*60sec) = (10W*1h)/(60*60) = 10kWh/(3.600.000)
-
-print("DC-energy yield left roof part (without MPPT)", dcpower_string_ohneMPPT.sum()*time_conversion, "kWh")
-print("DC-energy yield right roof part (with MPPT)", dcpower_string_mitMPPT.sum()*time_conversion, "kWh")
-
 mdata =  mdata_atmospheric_conditions
 mdata['th_heatflux_kW'] = mdata_technical_conditions.Th_Leistung_1_kW
 mdata['mass_flow'] = mdata_technical_conditions.Massenstrom_1_kgh
@@ -69,6 +66,25 @@ mdata['Voltage_Right_roof_part_V'] = Spannung_string_mitMPPT
 mdata['Current_Right_roof_part_A'] = mdata_technical_conditions["Strom_A_476"]
 mdata['DC-power_Right_roof_part_W'] = dcpower_string_mitMPPT
 
+dcpower_string_ohneMPPT_sum = 0 
+dcpower_string_mitMPPT_sum = 0
+    
+for i in range(len(mdata['DC-power_Right_roof_part_W'])-1):
+    
+    time_diff = mdata["Zeitstempel"][i+1] - mdata["Zeitstempel"][i]
+         
+    time_conversion_flux = time_diff.seconds * (60*60)  #1kW*Xsec = (1kW*Xsec*1min)/60sec = (1kW*1h*1min)/(60*60sec) = (1kW*1h)/(60*60) = 1kWh/(3.600)
+    time_conversion_dc = time_diff.seconds/(60*60*1000) #1W*Xsec = (1W*Xsec*1min)/60sec = (1W*1h*1min)/(60*60sec) = (1W*1h)/(60*60) = 1kWh/(3.600.000)
+    
+    flux_sum = mdata['th_heatflux_kW'][i] * time_conversion_flux
+    dcpower_string_ohneMPPT_sum += mdata['DC-power_left_roof_part_W'][i] * time_conversion_dc
+    dcpower_string_mitMPPT_sum += mdata['DC-power_Right_roof_part_W'][i] * time_conversion_dc
+
+print("DC-energy yield left roof part (without MPPT)", dcpower_string_ohneMPPT_sum, "kWh/Day")
+print("DC-energy yield right roof part (with MPPT)", dcpower_string_mitMPPT_sum, "kWh/Day")
+print("Heat Flux is: ", flux_sum, "kWh/Day")
+print("normed Heat Flux is: ", flux_sum/(num_sdp_series*num_sdp_parallel*0.1), "kWh/m2*Day")           # 0.1 is module area
+
 "______________Importing_AC-Power_Measurement_Data___________"
 
 print("\nImporting ...")
@@ -79,12 +95,9 @@ mdata_AC_power['AC-power_right_with_MPPT_kW'] = pd.read_excel(path, usecols = "D
 
 time_conversion = 15/60 #1kW*15min = (1kW*15min*1h)/(60min)
 
-print("\nAC-Power with MPPT:", mdata_AC_power["AC-power_right_with_MPPT_kW"].sum()*time_conversion, " kWh")
 print("AC-power without_MPPT: ", mdata_AC_power["AC-power_left_without_MPPT_kW"].sum()*time_conversion, " kWh")
+print("\nAC-Power with MPPT:", mdata_AC_power["AC-power_right_with_MPPT_kW"].sum()*time_conversion, " kWh")
 
-"""
-mdata['Zeitstempel'] = pd.to_datetime(mdata['Zeitstempel'])
-mdata.index = mdata['Zeitstempel']
-test3 = mdata.resample('15T').mean()
-"""
+mdata.to_excel(os.path.join("Exports", r'MeasurementValues_calculated.xlsx'))
+
 

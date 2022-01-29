@@ -86,10 +86,10 @@ class Photovoltaic():
 
         self.am_abs = pvlib.atmosphere.get_absolute_airmass(self.airmass, pressure)
 
-        self.aoi = pvlib.irradiance.aoi(45, 180,
+        self.aoi = pvlib.irradiance.aoi(39, 180,
                                         self.solpos['apparent_zenith'], self.solpos['azimuth'])
 
-        self.total_irrad = pvlib.irradiance.get_total_irradiance(45, 180,
+        self.total_irrad = pvlib.irradiance.get_total_irradiance(39, 180,
                                                                  self.solpos['apparent_zenith'],
                                                                  self.solpos['azimuth'],
                                                                  self.clearsky_dni, self.clearsky_ghi,

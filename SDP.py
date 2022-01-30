@@ -28,23 +28,25 @@ m_azimut = 180                                                                  
 m_tilt = 39                                                                     # Module tilt (Neigung) [°]
 
 
-
-dwd_data = pd.read_excel(r'704EEE00.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+dwd_data = pd.read_excel(r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
 pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
                                                       "temp_air",
                                                       "wind_speed", "pressure"])
-# Assign Headers to pv_data Dataframe
+
+"__________Assign Headers to pv_data Dataframe________________"
 
 pv_data["DateTimeIndex"] = dwd_data.date
 pv_data["DateTimeIndex"] = pd.to_datetime(pv_data["DateTimeIndex"])
-pv_data["dni"] = dwd_data.irradiance_dir
-pv_data["dhi"] = dwd_data.irradiance_diff
-pv_data["ghi"] = dwd_data.poa_global
+pv_data["dni"] = dwd_data.irradiance_dir  # direct Solar irradition (horizontal)
+pv_data["dhi"] = dwd_data.irradiance_diff  # diffuse solar radiation (horizontal)
+pv_data["ghi"] = dwd_data.poa_global  # global irrradiation     (horizontal)
 pv_data["temp_air"] = dwd_data.temp
 pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
+# Assign Headers to pv_data Dataframe
+
 
 
 house_data_read = pd.read_excel(r'house_demand.xlsx') # Hourly house demand (elec_cons , thermal_cons)
@@ -56,8 +58,8 @@ house_data["DateTimeIndex"] = pd.to_datetime(house_data["DateTimeIndex"])
 house_data["elec_cons"] = house_data_read.elec_cons
 house_data["thermal_cons"] = house_data_read.thermal_cons
 
-num_sdp_series = 96
-num_sdp_parallel = 2
+num_sdp_series = 12
+num_sdp_parallel = 12
 
 #####
 # Thermal initialization
@@ -84,7 +86,7 @@ dfThermalMain = []
 dfThermalSub = []
 # for i in pv_data.index[0:8760]:
 # Looping through weather data profile
-for i in pv_data.index[8:30]:
+for i in pv_data.index[0:8760]:
     print('Loop number : ' + str(i))
     time = pv_data.DateTimeIndex[i]
     temp_amb = pv_data.temp_air[i]

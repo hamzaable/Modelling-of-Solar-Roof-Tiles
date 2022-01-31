@@ -23,7 +23,7 @@ os.chdir('C:/Users/mariu/Documents/GitHub/Modelling_of_Solar_Roof_Tiles/Modellin
 path = os.path.join("Imports", r'Datensatz_Komplett_2021-12-21.xlsx')
 
 "__________Atmospheric conditions_____________"
-print("\nImporting ...")
+print("\nImporting atmospheric data (takes ~1 min) ...")
 mdata_atmospheric_conditions = pd.read_excel(path, usecols = "A, H, J, L, AI, AN:AP", names=['Zeitstempel', 'wind_speed', 'temp', 'pr', 'T_inlet', 'DTI', 'DHI', 'GHI'])
 mdata_atmospheric_conditions['GHI'][mdata_atmospheric_conditions['GHI'] <= 0] = 0
 mdata_atmospheric_conditions['DHI'][mdata_atmospheric_conditions['GHI'] < mdata_atmospheric_conditions['DHI']] = mdata_atmospheric_conditions['GHI']
@@ -87,7 +87,7 @@ print("normed Heat Flux is: ", flux_sum/(num_sdp_series*num_sdp_parallel*0.1), "
 
 "______________Importing_AC-Power_Measurement_Data___________"
 
-print("\nImporting ...")
+print("\nImporting AC power ...")
 path = os.path.join("Imports", r'ACPower_ohne_MPPT_21-12-21_15min.xlsx')
 mdata_AC_power = pd.read_excel(path, usecols = "A, D", names=['Zeitstempel', 'AC-power_left_without_MPPT_kW'])
 path = os.path.join("Imports", r'ACPower_MPPT_21-12-21_15min.xlsx')
@@ -98,6 +98,6 @@ time_conversion = 15/60 #1kW*15min = (1kW*15min*1h)/(60min)
 print("AC-power without_MPPT: ", mdata_AC_power["AC-power_left_without_MPPT_kW"].sum()*time_conversion, " kWh")
 print("\nAC-Power with MPPT:", mdata_AC_power["AC-power_right_with_MPPT_kW"].sum()*time_conversion, " kWh")
 
-mdata.to_excel(os.path.join("Exports", r'MeasurementValues_calculated.xlsx'))
+mdata.to_excel(os.path.join("Exports", r'MeasurementValues_processed.xlsx'))
 
 

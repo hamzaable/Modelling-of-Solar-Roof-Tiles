@@ -19,7 +19,7 @@ class MeasurementDataImport():
         path = os.path.join("Imports", r'Datensatz_Komplett_2021-12-21.xlsx')
         
         "__________Atmospheric conditions_____________"
-        print("\nImporting measurement Data for Atmospheric conditions ...")
+        print("\nImporting measurement Data for Atmospheric conditions ( ~1min)...")
         mdata_atmospheric_conditions = pd.read_excel(path, usecols = "A, H, J, L, AI, AN:AP", names=['Zeitstempel', 'wind_speed', 'temp', 'pr', 'T_inlet', 'DTI', 'DHI', 'GHI'])
         mdata_atmospheric_conditions['DNI'] = mdata_atmospheric_conditions["GHI"]-mdata_atmospheric_conditions["DHI"]
         mdata_atmospheric_conditions['GHI'][mdata_atmospheric_conditions['GHI'] <= 0] = 0

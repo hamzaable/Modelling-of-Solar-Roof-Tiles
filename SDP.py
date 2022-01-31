@@ -228,7 +228,7 @@ sum_m_exceeded = 0
 sum_m_below = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
+for i in tqdm(mdata.index[3200:3210]):   # Full Day Sim.: [0:5906]
 
 
     "_______Looping through excel rows_______"
@@ -629,13 +629,13 @@ complete_data_15T['Time'] = pd.to_datetime(electrical_data_New['Time'])
 complete_data_15T.index=complete_data_15T['Time']
 complete_data_15T = complete_data_15T.resample('15T').mean()
 
-Efficiency = complete_data.loc["Total", "HeatFlux_[kW/m^2]"] / complete_data.loc["Total", "E_sdp_eff"]
-print(f'Total Power difference with and without cooling effect {round(totalPowerDiff, 2)} Watt hours')
-print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
-
 div = len(complete_data_15T[complete_data_15T["Effective Irradiance [W/m^2]"] > 0])
 complete_data_15T.loc['Total'] = complete_data_15T.select_dtypes(np.number).sum()  # finding total number of rows
 complete_data_15T.loc['Average'] = complete_data_15T.loc['Total']/div
+
+Efficiency = complete_data_15T.loc["Total", "HeatFlux_[kW/m^2]"] / complete_data_15T.loc["Total", "E_sdp_eff"]
+print(f'Total Power difference with and without cooling effect {round(totalPowerDiff, 2)} Watt hours')
+print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
 
 pd.set_option('display.max_colwidth', 40)
 complete_data_15T.to_excel(os.path.join("Exports", r'CompleteResult_Cooling_15T.xlsx'))

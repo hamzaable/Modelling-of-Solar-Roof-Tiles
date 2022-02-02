@@ -32,7 +32,7 @@ albedo = 0.20                                                                   
 a_r = 0.14                                                                      # Spectral Corrections factor for different module glasses
 irrad_model = 'haydavies'                                                       # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
 P_PV_STC = 14.4                                                                 # rated power from TüV Calibration report under STC Conditions at 25°C & 1000 W/m^2                            
-m_azimut = 180                                                                  # Module Azimut (Ausrichtung) [°]
+m_azimut = 171                                                                  # Module Azimut (Ausrichtung) [°]
 m_tilt = 39                                                                     # Module tilt (Neigung) [°]
 
 """

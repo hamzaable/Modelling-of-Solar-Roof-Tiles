@@ -537,10 +537,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
     dfMainElec.append(dfSubElec)
     dfMainElecNew.append(dfSubElec_New)
-    
-    #df_test_elecindicators_full.append(df_test_elecindicators)
-    
-#df_test_elecindicators_full = pd.DataFrame(df_test_elecindicators_full)     
+       
 
 "_________Saving results in excel_____________"
 

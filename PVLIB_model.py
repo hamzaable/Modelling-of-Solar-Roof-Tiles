@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pvlib
+import numpy as np
 
 
 # from pvlib.pvsystem import pvsystem
@@ -54,11 +55,21 @@ class Photovoltaic():
             self.airmass,                                                   # relative airmass
             pressure)                                                       # ambient pressure                           
         
+        #Determination of the angle of incidence (aoi)
         self.aoi = pvlib.irradiance.aoi(
             self.m_tilt,                                                    # Panel tilt from horizontal
             self.m_azimut,                                                  # Panel azimuth from north
             self.solpos['apparent_zenith'], 
             self.solpos['azimuth'])
+        
+        # Manipulation of poa_direct(PVGIS) on horizontal plane to DNI-tilted for get_total_irradiance calculation
+        self.dni_beam = pvlib.irradiance.dni(self.clearsky_ghi, 
+                                                  self.clearsky_dhi, 
+                                                  self.solpos['apparent_zenith'], 
+                                                  clearsky_dni=None, 
+                                                  clearsky_tolerance=1.1, 
+                                                  zenith_threshold_for_zero_dni=88.0, 
+                                                  zenith_threshold_for_clearsky_limit=80.0)
         
         # Determine total in-plane irradiance and its beam, sky diffuse and ground reflected components, 
         # using the specified sky diffuse irradiance model.
@@ -67,13 +78,12 @@ class Photovoltaic():
             self.m_azimut,                                                  
             self.solpos['apparent_zenith'],
             self.solpos['azimuth'],
-            self.clearsky_dni,                                              # Direct Normal Irradiance
+            self.dni_beam,                                                  # Direct Normal Irradiance/Beam Irradiance
             self.clearsky_ghi,                                              # Global horizontal irradiance
             self.clearsky_dhi,                                              # Diffuse horizontal irradiance
             dni_extra=self.dni_extra,                                       # extraterrestrial radiation
             model=self.irrad_model,                                         # Irradiance model, in this case haydavies
             albedo=self.albedo)                                             # see SDP.py
-    
                     
         #Estimating cell temperatue via Faimann Model
         self.tcell = cell_temp                                              # Combined heat loss factor influenced by wind [(W/m^2)/(C)]
@@ -248,10 +258,19 @@ class cellTemperature():
     
         self.dni_extra = pvlib.irradiance.get_extra_radiation(self.times)
     
+        # Manipulation of poa_direct(PVGIS)/DNI on horizontal plane to DNI-tilted for get_total_irradiance calculation
+        self.dni_beam = pvlib.irradiance.dni(self.clearsky_ghi, 
+                                                  self.clearsky_dhi, 
+                                                  self.solpos['apparent_zenith'], 
+                                                  clearsky_dni=None, 
+                                                  clearsky_tolerance=1.1, 
+                                                  zenith_threshold_for_zero_dni=88.0, 
+                                                  zenith_threshold_for_clearsky_limit=80.0)
+    
         self.total_irrad = pvlib.irradiance.get_total_irradiance(self.m_tilt, self.m_azimut,
                                                                     self.solpos['apparent_zenith'],
                                                                     self.solpos['azimuth'],
-                                                                    self.clearsky_dni, self.clearsky_ghi,
+                                                                    self.dni_beam, self.clearsky_ghi,
                                                                     self.clearsky_dhi,
                                                                     dni_extra=self.dni_extra,
                                                                     model=self.irrad_model,

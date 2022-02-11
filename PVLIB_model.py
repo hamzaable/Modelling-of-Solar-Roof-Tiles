@@ -2,7 +2,7 @@
 
 import pvlib
 import numpy as np
-
+import math
 
 # from pvlib.pvsystem import pvsystem
 # pip install NREL-PySAM
@@ -62,7 +62,7 @@ class Photovoltaic():
             self.solpos['apparent_zenith'], 
             self.solpos['azimuth'])
         
-        # Manipulation of poa_direct(PVGIS) on horizontal plane to DNI-tilted for get_total_irradiance calculation
+        
         self.dni_beam = pvlib.irradiance.dni(self.clearsky_ghi, 
                                                   self.clearsky_dhi, 
                                                   self.solpos['apparent_zenith'], 
@@ -71,6 +71,10 @@ class Photovoltaic():
                                                   zenith_threshold_for_zero_dni=88.0, 
                                                   zenith_threshold_for_clearsky_limit=80.0)
         
+        #Manipulation of poa_direct(PVGIS) (E_dir on horizontal plane) to DNI-tilted for get_total_irradiance calculation
+        self.dni = (ghi - dhi)/np.cos(np.radians(self.solpos['apparent_zenith'])) 
+        
+        
         # Determine total in-plane irradiance and its beam, sky diffuse and ground reflected components, 
         # using the specified sky diffuse irradiance model.
         self.total_irrad = pvlib.irradiance.get_total_irradiance(
@@ -78,7 +82,7 @@ class Photovoltaic():
             self.m_azimut,                                                  
             self.solpos['apparent_zenith'],
             self.solpos['azimuth'],
-            self.dni_beam,                                                  # Direct Normal Irradiance/Beam Irradiance
+            self.dni,                                                       # Direct Normal Irradiance
             self.clearsky_ghi,                                              # Global horizontal irradiance
             self.clearsky_dhi,                                              # Diffuse horizontal irradiance
             dni_extra=self.dni_extra,                                       # extraterrestrial radiation

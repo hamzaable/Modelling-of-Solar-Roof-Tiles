@@ -174,7 +174,7 @@ num_sdp_series_thermalmodel = 12
 num_sdp_parallel_thermalmodel = 12
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
-mass_flow = 0.0094080 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
+mass_flow = 0.009408 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
 P_HP = 3500                                                                      #nominal power of the heat Pump in Watts, taken as constant
 
 # Allowed Value range for mass flow is:
@@ -212,6 +212,9 @@ dfSubElec = [] # Row result
 dfSubElec_New = [] # Row Result with cooling effect
 dfThermalMain = [] #Thermal Results
 dfThermalSub = [] # Thermal Effect of one row
+dfThermalMain_withoutCooling = [] #Thermal Results without Cooling effect (only relevant for heatflux)
+dfThermalSub_withoutCooling = [] # Thermal Effect of one row without Cooling effect (only relevant for heatflux)
+dfheatPumpThermal_ref = [] #Small DataFrame containing thermal energy Output of the Heat Pump with ambient temperature, for comparison of the Jahresarbeitzahl
 dfirrad_Temp = [] # temporary results Dataframe for predicted irradiation Data and DC-Power 
 dfirrad_Main = [] # complete Dataframe for predicted irradiation Data and DC-Power 
 totalPowerDiff = 0
@@ -286,15 +289,15 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
         C_k_annual = 1 + (module["gamma_pmp"]/100) * (electrical_yield.tcell.item()- 31.01)                                             # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - without cooling effect                                                                                                                                                                                   
         
         # Ideal energy yield under STC conditions and temperature corrected
-        E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)  
+        E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.total_irrad.poa_global.item())) / 1000), 2)  
         
          # Final system yield (net energy yield)
         Y_F = round((float(electrical_yield.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
         
         # Perforance ratio (Leistungsverhältnis), performance ratio under STC conditions and temperature corrected
-        PR = round((Y_F/(float(electrical_yield.effective_irradiance) / 1000)), 2)
+        PR = round((Y_F/(float(electrical_yield.total_irrad.poa_global.item()) / 1000)), 2)
         PR_STC = round((electrical_yield.power_ac / E_ideal_STC), 2)
-        PR_annual_eq = round(electrical_yield.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.effective_irradiance)) / 1000), 2)
+        PR_annual_eq = round(electrical_yield.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.total_irrad.poa_global.item())) / 1000), 2)
                 
         # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
         autarky_rate = round((float(electrical_yield.power_ac) / house_data["elec_cons"][i])*100, 2)
@@ -351,7 +354,17 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
             m_loss_offdesign=m_loss_offdesign,
             )
         countNonZero = countNonZero + 1
-
+        
+    # flux = 0 relating to the air temperature behind the fan = ambient temperature. The inlet temperature and temperature behind the fan is the same with no cooling effect
+    flux = 0 
+    thermal_efficency = 0   #no fan operating at simulations without cooling effect
+    status = "System Off"   #s.o.
+    thermal_parameter = 0   #s.o.
+    elec_parameter = (house_data.elec_cons[i] + p_fan_init) < (P_MP * num_sdp_parallel * num_sdp_series)
+    
+    dfThermalSub_withoutCooling = [i, time, round(E_sdp_New, 2), p_fan_init, m_out_init, flux, thermal_efficency, status, elec_parameter,
+                    thermal_parameter]    
+    
     "____Finding Avg temperature for cooling effect_____"
 
     T_PV_Temp_Model = float(initCellTemperature.tcell)
@@ -389,8 +402,9 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
                                             albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
                                             temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
                                             pressure=pv_data.pressure[i], cell_temp=t_cooling)
-        "________Calculating the Heat Pump COP_with Cooling effect_______"
-        heatPump = HeatPump(P_HP) 
+        
+        "________Calculating the Heat Pump COP_with Cooling effect - based on t_heatflux_out_______"
+        heatPump = HeatPump(P_HP)
         heatPumpCOP = round(heatPump.calc_cop_ruhnau(50, t_heatflux_out, "ashp"), 2)
         heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(50, pv_data.temp_air[i], "ashp"), 2)
 
@@ -398,7 +412,8 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
         
         heatPumpThermal = round(P_HP * heatPumpCOP, 2)
         heatPumpThermal_ref = round(P_HP * heatPumpCOP_ref, 2)
-
+        dfheatPumpThermal_ref.append(heatPumpThermal_ref)                       # Store this value for reference Jahresarbeitszahl calculation with tamb
+        
         if int(electrical_yield_new.effective_irradiance) == 0:
             efficency_New = 0
         else:
@@ -423,20 +438,19 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
             C_k_annual = 1 + (module["gamma_pmp"]/100) * (t_cooling - 28.03)                                              # PR temperature corrected - 25.14 °C is the mean module temperature over one year for every hour of irradiance (where the moduel are in operation) - taking into account the cooling effect
             
             # Ideal energy yield under STC conditions and temperature corrected
-            E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)  
+            E_ideal_STC = round((((P_PV_STC * C_k_STC * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.total_irrad.poa_global.item())) / 1000), 2)  
             
             # Final system yield (net energy yield)
             Y_F = round((float(electrical_yield_new.power_ac) / (P_PV_STC * (num_sdp_series * num_sdp_parallel))), 2)
             
             # Perforance ratio (Leistungsverhältnis), performance ratio under STC conditions and temperature corrected
-            PR = round((Y_F/(float(electrical_yield_new.effective_irradiance) / 1000)), 2)
+            PR = round((Y_F/(float(electrical_yield.total_irrad.poa_global.item()) / 1000)), 2)
             PR_STC = round((electrical_yield_new.power_ac / E_ideal_STC), 2)
-            PR_annual_eq = round(electrical_yield_new.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield_new.effective_irradiance)) / 1000), 2)
+            PR_annual_eq = round(electrical_yield_new.power_ac / (((P_PV_STC * C_k_annual * (num_sdp_series * num_sdp_parallel)) * float(electrical_yield.total_irrad.poa_global.item())) / 1000), 2)
             
             # Autarky rate according to Quaschning, V.: Regenerative Energiesysteme (2019)
             autarky_rate = round((float(electrical_yield_new.power_ac) / house_data["elec_cons"][i])*100, 2)
                         
-        #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), C_k_STC, E_ideal_STC, PR_STC, C_k_annual, Y_F, PR_annual_eq, autarky_rate]
         
         "______Saving results__________"                          
         dfSubElec_New = [i,
@@ -503,9 +517,6 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
     flux = round((m_out * 1.005 * (t_heatflux_out - temp_amb) / (num_sdp_series * num_sdp_parallel * 0.10)), 3) # cp_air: 1.005 kJ/kg*K, Unit is kJ/s --> kW
     
     "_____Calculating_Performance_Indicators_(thermal)_Values_only_with_Cooling_effect_________"
-     
-    #solarer_Deckungsgrad - without taking the storage into consideraiton
-    #sol_coverage = round(((house_data["thermal_cons"][i] - heatPumpThermal)/house_data["thermal_cons"][i])*100, 2)
                
     elec_parameter = (house_data.elec_cons[i] + p_fan) < (P_MP_New * num_sdp_parallel * num_sdp_series)
     thermal_parameter = (house_data.thermal_cons[i] < flux)
@@ -535,7 +546,7 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
     dfThermalSub = [i, time, round(E_sdp_Cooling, 2), p_fan, m_out, flux, thermal_efficency, status, elec_parameter,
                     thermal_parameter]
     
-    dfThermalMain.append(dfThermalSub)
+    "_____Results_Dataframe for irradiation calculation and components__________"
     
     dfirrad_Temp = [i, time, 
                     round(electrical_yield_new.solpos["apparent_zenith"].item(), 2), 
@@ -546,7 +557,6 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
                     round(pv_data["dhi"][i], 2),
                     round(pv_data["dni"][i], 2),
                     round(electrical_yield_new.dni.item(), 2),
-                    round(electrical_yield_new.dni_beam.item(), 2),
                     round(electrical_yield_new.total_irrad["poa_global"].item(), 2),
                     round(electrical_yield_new.total_irrad["poa_direct"].item(), 2),
                     round(electrical_yield_new.total_irrad["poa_sky_diffuse"].item(), 2),
@@ -557,6 +567,8 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
     dfirrad_Main.append(dfirrad_Temp)
     dfMainElec.append(dfSubElec)
     dfMainElecNew.append(dfSubElec_New)
+    dfThermalMain_withoutCooling.append(dfThermalSub_withoutCooling)
+    dfThermalMain.append(dfThermalSub)
        
 
 "_________Saving results in excel_____________"
@@ -589,11 +601,16 @@ thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
 thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
-# print(thermal_data)
+
+thermal_data_withoutCooling = pd.DataFrame(data=dfThermalMain_withoutCooling, columns=column_values)
+thermal_data_withoutCooling.loc['Total'] = thermal_data_withoutCooling.select_dtypes(np.number).sum()
+thermal_data_withoutCooling.loc['Average'] = thermal_data_withoutCooling.loc['Total']/countNonZero
+pd.set_option('display.max_colwidth', 8)
+
 
 #irradiation
 column_values = ["Index", "Time", "Apparenth Zenith [°]", "Apparenth Elevation [°]", "Azimuth [°]", "AOI [°]","GHI [W/m2]", "DHI [W/m2]",
-                 "E_Dir_hor [W/m2]", "DNI [W/m2]", "DNI-Beam [W/m2]", "POA GLobal [W/m2]", "POA direct [W/m2]", "POA Sky Diffuse [W/m2]", "POA Ground Diffuse [W/m2]", "Effective Irradiance [W/m2]", "DC-Power Output [W]"]
+                 "E_Dir_hor [W/m2]", "DNI [W/m2]", "POA GLobal [W/m2]", "POA direct [W/m2]", "POA Sky Diffuse [W/m2]", "POA Ground Diffuse [W/m2]", "Effective Irradiance [W/m2]", "DC-Power Output [W]"]
 dfirrad_Main = pd.DataFrame(data=dfirrad_Main, columns=column_values)
 dfirrad_Main.loc['Total'] = dfirrad_Main.select_dtypes(np.number).sum()  # finding total number of rows
 dfirrad_Main.to_excel(os.path.join("Exports", r'Sun_position_and_Irradiation.xlsx'))
@@ -605,14 +622,15 @@ print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
 complete_data = pd.merge(electrical_data_New, thermal_data)
 complete_data.to_excel(os.path.join("Exports", r'CompleteResult.xlsx'))
 
-complete_data = pd.merge(electrical_data, thermal_data)
+complete_data = pd.merge(electrical_data, thermal_data_withoutCooling)
 complete_data.to_excel(os.path.join("Exports", r'CompleteResultWithoutCoolingEffect.xlsx'))
 
 
 "____Calculating_Jahresarbeitszahl_of the heat pump____"
-Jahresarbeitszahl_ref = round(electrical_data_New.select_dtypes(np.number).sum().loc['HP_Thermal[Wh]'] / (P_HP * len(electrical_data_New)), 2)
+dfheatPumpThermal_ref = pd.DataFrame(data=dfheatPumpThermal_ref)
+Jahresarbeitszahl_ref = round(dfheatPumpThermal_ref.sum().item() / (P_HP * len(electrical_data_New)), 2)
 Jahresarbeitszahl = round(electrical_data_New.select_dtypes(np.number).sum().loc['HP_Thermal[Wh]'] / (P_HP * len(electrical_data_New)), 2) 
-print("\nAnnual performance factor (Jahresarbeitzahl) of the heat Pump: ", Jahresarbeitszahl, "Annual Performance factor reference of the heat Pump with Tamb: ", Jahresarbeitszahl_ref)
+print("\nAnnual performance factor (Jahresarbeitzahl) of the heat Pump: ", Jahresarbeitszahl, "\nAnnual Performance factor reference of the heat Pump with Tamb: ", Jahresarbeitszahl_ref)
 
 
 "________Plotting______"

@@ -24,6 +24,7 @@ class Photovoltaic():
         self.m_azimut =  m_azimut
         self.m_tilt = m_tilt
         
+        self.dni = dni
         self.clearsky_dni = dni
         self.clearsky_ghi = ghi
         self.clearsky_dhi = dhi
@@ -62,17 +63,8 @@ class Photovoltaic():
             self.solpos['apparent_zenith'], 
             self.solpos['azimuth'])
         
-        
-        self.dni_beam = pvlib.irradiance.dni(self.clearsky_ghi, 
-                                                  self.clearsky_dhi, 
-                                                  self.solpos['apparent_zenith'], 
-                                                  clearsky_dni=None, 
-                                                  clearsky_tolerance=1.1, 
-                                                  zenith_threshold_for_zero_dni=88.0, 
-                                                  zenith_threshold_for_clearsky_limit=80.0)
-        
         #Manipulation of poa_direct(PVGIS) (E_dir on horizontal plane) to DNI-tilted for get_total_irradiance calculation
-        self.dni = (ghi - dhi)/np.cos(np.radians(self.solpos['apparent_zenith'])) 
+        self.dni = self.dni/np.cos(np.radians(90-self.solpos['apparent_elevation'])) 
         
         
         # Determine total in-plane irradiance and its beam, sky diffuse and ground reflected components, 

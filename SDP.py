@@ -212,12 +212,13 @@ dfSubElec = [] # Row result
 dfSubElec_New = [] # Row Result with cooling effect
 dfThermalMain = [] #Thermal Results
 dfThermalSub = [] # Thermal Effect of one row
-df_test_elecindicators_full = [] # testing performance indicators
+dfirrad_Temp = [] # temporary results Dataframe for predicted irradiation Data and DC-Power 
+dfirrad_Main = [] # complete Dataframe for predicted irradiation Data and DC-Power 
 totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
+for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
 
 
     "_______Looping through excel rows_______"
@@ -533,14 +534,34 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
         thermal_efficency = round((flux * 1000*100) / int(electrical_yield_new.effective_irradiance),2)
     dfThermalSub = [i, time, round(E_sdp_Cooling, 2), p_fan, m_out, flux, thermal_efficency, status, elec_parameter,
                     thermal_parameter]
+    
     dfThermalMain.append(dfThermalSub)
-
+    
+    dfirrad_Temp = [i, time, 
+                    round(electrical_yield_new.solpos["apparent_zenith"].item(), 2), 
+                    round(electrical_yield_new.solpos["apparent_elevation"].item(), 2),
+                    round(electrical_yield_new.solpos["azimuth"].item(), 2),
+                    round(electrical_yield_new.aoi.item(), 2),
+                    round(pv_data["ghi"][i], 2),
+                    round(pv_data["dhi"][i], 2),
+                    round(pv_data["dni"][i], 2),
+                    round(electrical_yield_new.dni.item(), 2),
+                    round(electrical_yield_new.dni_beam.item(), 2),
+                    round(electrical_yield_new.total_irrad["poa_global"].item(), 2),
+                    round(electrical_yield_new.total_irrad["poa_direct"].item(), 2),
+                    round(electrical_yield_new.total_irrad["poa_sky_diffuse"].item(), 2),
+                    round(electrical_yield_new.total_irrad["poa_ground_diffuse"].item(), 2),
+                    round(electrical_yield_new.effective_irradiance.item(), 2),
+                    round(electrical_yield_new.annual_energy.item(), 2)]
+    
+    dfirrad_Main.append(dfirrad_Temp)
     dfMainElec.append(dfSubElec)
     dfMainElecNew.append(dfSubElec_New)
        
 
 "_________Saving results in excel_____________"
 
+#electrical
 column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
@@ -561,7 +582,7 @@ electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero  # fi
 pd.set_option('display.max_colwidth', 40)
 
 
-
+#thermal
 column_values = ["Index", "Time", "E_sdp_eff", "P_fan", "M_out", "HeatFlux_[kW/m^2]","Thermal Efficency","status",
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
@@ -570,6 +591,14 @@ thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
 # print(thermal_data)
 
+#irradiation
+column_values = ["Index", "Time", "Apparenth Zenith [°]", "Apparenth Elevation [°]", "Azimuth [°]", "AOI [°]","GHI [W/m2]", "DHI [W/m2]",
+                 "E_Dir_hor [W/m2]", "DNI [W/m2]", "DNI-Beam [W/m2]", "POA GLobal [W/m2]", "POA direct [W/m2]", "POA Sky Diffuse [W/m2]", "POA Ground Diffuse [W/m2]", "Effective Irradiance [W/m2]", "DC-Power Output [W]"]
+dfirrad_Main = pd.DataFrame(data=dfirrad_Main, columns=column_values)
+dfirrad_Main.loc['Total'] = dfirrad_Main.select_dtypes(np.number).sum()  # finding total number of rows
+dfirrad_Main.to_excel(os.path.join("Exports", r'Sun_position_and_Irradiation.xlsx'))
+
+#Complete Results
 Efficiency = thermal_data.loc["Total", "HeatFlux_[kW/m^2]"] / thermal_data.loc["Total", "E_sdp_eff"]
 print(f'Total Power difference with and without cooling effect {round(totalPowerDiff, 2)} Watt hours')
 print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")

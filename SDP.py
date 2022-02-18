@@ -460,7 +460,7 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
                          round(T_PV_Temp_Model,2),
                          round(t_heatflux_out,2),
                          round(electrical_yield_new.annual_energy, 2),
-                         round(electrical_yield.power_ac, 2),
+                         round(electrical_yield_new.power_ac, 2),
                          int(electrical_yield_new.effective_irradiance),
                          efficency_New,
                          E_ideal_STC,

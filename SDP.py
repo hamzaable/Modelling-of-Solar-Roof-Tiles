@@ -405,8 +405,8 @@ for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
         
         "________Calculating the Heat Pump COP_with Cooling effect - based on t_heatflux_out_______"
         heatPump = HeatPump(P_HP)
-        heatPumpCOP = round(heatPump.calc_cop_ruhnau(50, t_heatflux_out, "ashp"), 2)
-        heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(50, pv_data.temp_air[i], "ashp"), 2)
+        heatPumpCOP = round(heatPump.calc_cop_ruhnau( t_heatflux_out,50, "ashp"), 2)
+        heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(pv_data.temp_air[i],50, "ashp"), 2)
 
         "_______Calculating Heat Pump thermal Output_______"
         

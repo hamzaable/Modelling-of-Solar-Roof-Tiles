@@ -221,7 +221,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[4416:4441]):   # One Year Sim.: [0:8759]
+for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
 
     "_______Looping through excel rows_______"
@@ -615,14 +615,6 @@ thermal_data_withoutCooling = pd.DataFrame(data=dfThermalMain_withoutCooling, co
 thermal_data_withoutCooling.loc['Total'] = thermal_data_withoutCooling.select_dtypes(np.number).sum()
 thermal_data_withoutCooling.loc['Average'] = thermal_data_withoutCooling.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
-
-
-#irradiation
-column_values = ["Index", "Time", "Apparenth Zenith [°]", "Apparenth Elevation [°]", "Azimuth [°]", "AOI [°]","GHI [W/m2]", "DHI [W/m2]",
-                 "E_Dir_hor [W/m2]", "DNI [W/m2]", "POA GLobal [W/m2]", "POA direct [W/m2]", "POA Sky Diffuse [W/m2]", "POA Ground Diffuse [W/m2]", "Effective Irradiance [W/m2]", "DC-Power Output [W]"]
-dfirrad_Main = pd.DataFrame(data=dfirrad_Main, columns=column_values)
-dfirrad_Main.loc['Total'] = dfirrad_Main.select_dtypes(np.number).sum()  # finding total number of rows
-dfirrad_Main.to_excel(os.path.join("Exports", r'Sun_position_and_Irradiation.xlsx'))
 
 #Complete Results
 Efficiency = thermal_data.loc["Total", "HeatFlux_[kW/m^2]"] / thermal_data.loc["Total", "E_sdp_eff"]

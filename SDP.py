@@ -174,7 +174,7 @@ num_sdp_series_thermalmodel = 12
 num_sdp_parallel_thermalmodel = 12
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
-mass_flow = 0.0320168 #0.0320168                                                # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
+mass_flow = 0.0094080 #0.0320168                                                # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
 P_HP = 3500                                                                     #nominal power of the heat Pump in Watts, taken as constant
 
 # Allowed Value range for mass flow is:

@@ -174,7 +174,7 @@ num_sdp_series_thermalmodel = 12
 num_sdp_parallel_thermalmodel = 12
 ks_SRT = 0.000225                                                               # ks/roughness value for one SRT, used in design mode to calculate the pressure drop. ks_SRT values for off design mode are calculated
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
-mass_flow = 0.0320168 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
+mass_flow = 0.009408 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
 P_HP = 3500                                                                      #nominal power of the heat Pump in Watts, taken as constant
 
 # Allowed Value range for mass flow is:
@@ -559,6 +559,9 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                     round(pv_data["dhi"][i], 2),
                     round(pv_data["dni"][i], 2),
                     round(electrical_yield_new.dni.item(), 2),
+                    round(electrical_yield_new.IAM_mod_dir.item(), 4),
+                    round(electrical_yield_new.IAM_mod_diff[0], 4),
+                    round(electrical_yield_new.IAM_mod_diff[1], 4),
                     round(electrical_yield_new.total_irrad["poa_global"].item(), 2),
                     round(electrical_yield_new.total_irrad["poa_direct"].item(), 2),
                     round(electrical_yield_new.total_irrad["poa_sky_diffuse"].item(), 2),
@@ -577,7 +580,7 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
 #irradiation
 column_values = ["Index", "Time", "Apparenth Zenith [°]", "Apparenth Elevation [°]", "Azimuth [°]", "AOI [°]","GHI [W/m2]", "DHI [W/m2]",
-                 "E_Dir_hor [W/m2]", "DNI [W/m2]", "POA GLobal [W/m2]", "POA direct [W/m2]", "POA Sky Diffuse [W/m2]", "POA Ground Diffuse [W/m2]", "Effective Irradiance [W/m2]", "DC-Power Output [W]"]
+                 "E_Dir_hor [W/m2]", "DNI [W/m2]", "IAM", "IAM sky diffuse", "IAM ground diffuse", "POA GLobal [W/m2]", "POA direct [W/m2]", "POA Sky Diffuse [W/m2]", "POA Ground Diffuse [W/m2]", "Effective Irradiance [W/m2]", "DC-Power Output [W]"]
 dfirrad_Main = pd.DataFrame(data=dfirrad_Main, columns=column_values)
 dfirrad_Main.loc['Total'] = dfirrad_Main.select_dtypes(np.number).sum()  # finding total number of rows
 dfirrad_Main.to_excel(os.path.join("Exports", r'Sun_position_and_Irradiation.xlsx'))
@@ -642,8 +645,8 @@ complete_data_woc.to_excel(os.path.join("Exports", r'CompleteResultWithoutCoolin
 
 "____Calculating_Jahresarbeitszahl_of the heat pump____"
 dfheatPumpThermal_ref = pd.DataFrame(data=dfheatPumpThermal_ref)
-Jahresarbeitszahl_ref = round(dfheatPumpThermal_ref.sum().item() / (P_HP * len(electrical_data_New)), 2)
-Jahresarbeitszahl = round(electrical_data_New.select_dtypes(np.number).sum().loc['HP_Thermal[Wh]'] / (P_HP * len(electrical_data_New)), 2)
+Jahresarbeitszahl_ref = round(dfheatPumpThermal_ref.sum().item() / (P_HP * len(naive_times)), 2)
+Jahresarbeitszahl = round(complete_data['HP_Thermal[Wh]'][complete_data.index[-2]] / (P_HP * len(naive_times)), 2)
 print("\nAnnual performance factor (Jahresarbeitzahl) of the heat Pump: ", Jahresarbeitszahl, "\nAnnual Performance factor reference of the heat Pump with Tamb: ", Jahresarbeitszahl_ref)
 
 

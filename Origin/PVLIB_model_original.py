@@ -118,7 +118,7 @@ class Photovoltaic():
             #Calculating SAPM spectral loss coefficient, F1.
             self.F1 = pvlib.pvsystem.sapm_spectral_loss(
                 self.am_abs,                                                    # Absolute airmass
-                self.module)                                                    # A dict, Series, or DataFrame defining the SAPM performance parameters. Defined in SDP.py
+                module)                                                    # A dict, Series, or DataFrame defining the SAPM performance parameters. Defined in SDP.py
                         
             #Estimating Angle of incidence modifier(IAM) using the Martin and Ruiz for direct radiation
             self.IAM_mod_dir = pvlib.iam.martin_ruiz(

@@ -80,10 +80,9 @@ class Photovoltaic():
             dni_extra=self.dni_extra,                                       # extraterrestrial radiation
             model=self.irrad_model,                                         # Irradiance model, in this case haydavies
             albedo=self.albedo)                                             # see SDP.py
-        
+                    
         #Estimating cell temperatue via Faimann Model
         self.tcell = cell_temp                                              # Combined heat loss factor influenced by wind [(W/m^2)/(C)]
-        
         
         #Estimating Angle of incidence modifier(IAM) using the Martin and Ruiz for diffuse radiation
         self.IAM_mod_diff = pvlib.iam.martin_ruiz_diffuse(
@@ -106,8 +105,8 @@ class Photovoltaic():
                                                 + self.IAM_mod_diff[0] * self.total_irrad['poa_sky_diffuse']
                                                 + self.IAM_mod_diff[1] * self.total_irrad['poa_ground_diffuse'])   
                     
-        
-        """  
+        """
+            
             Manual Effective Irradiances Effective Irradiance calculation 
             --> Ground reflection considered
     
@@ -139,6 +138,7 @@ class Photovoltaic():
                 self.IAM_mod_diff[1] : numeric
                     incidence angle modifiers (iam) for ground-reflected irradiance
                 
+                                        
         """         
         
         #Estimates parameters for the CEC single diode model (SDM) using the SAM SDK
@@ -241,8 +241,7 @@ class cellTemperature():
     
         self.m_azimut = m_azimut
         self.m_tilt = m_tilt
-        
-        self.dni = dni
+    
         self.clearsky_dni = dni
         self.clearsky_ghi = ghi
         self.clearsky_dhi = dhi
@@ -255,13 +254,19 @@ class cellTemperature():
     
         self.dni_extra = pvlib.irradiance.get_extra_radiation(self.times)
     
-        #Manipulation of poa_direct(PVGIS) (E_dir on horizontal plane) to DNI-tilted for get_total_irradiance calculation
-        self.dni = self.dni/np.cos(np.radians(90-self.solpos['apparent_elevation']))
+        # Manipulation of poa_direct(PVGIS)/DNI on horizontal plane to DNI-tilted for get_total_irradiance calculation
+        self.dni_beam = pvlib.irradiance.dni(self.clearsky_ghi, 
+                                                  self.clearsky_dhi, 
+                                                  self.solpos['apparent_zenith'], 
+                                                  clearsky_dni=None, 
+                                                  clearsky_tolerance=1.1, 
+                                                  zenith_threshold_for_zero_dni=88.0, 
+                                                  zenith_threshold_for_clearsky_limit=80.0)
     
         self.total_irrad = pvlib.irradiance.get_total_irradiance(self.m_tilt, self.m_azimut,
                                                                     self.solpos['apparent_zenith'],
                                                                     self.solpos['azimuth'],
-                                                                    self.dni, self.clearsky_ghi,
+                                                                    self.dni_beam, self.clearsky_ghi,
                                                                     self.clearsky_dhi,
                                                                     dni_extra=self.dni_extra,
                                                                     model=self.irrad_model,

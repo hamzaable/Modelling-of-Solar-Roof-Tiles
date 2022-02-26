@@ -228,7 +228,7 @@ sum_m_exceeded = 0
 sum_m_below = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
+for i in tqdm(mdata.index[3560:3580]):   # Full Day Sim.: [0:5906]
 
 
     "_______Looping through excel rows_______"
@@ -416,13 +416,13 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
                                             time=time, dni=dni, ghi=ghi,
                                             dhi=dhi,
                                             albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                            temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],
-                                            pressure=pv_data.pressure[i], cell_temp=t_cooling)
+                                            temp_amb=temp_amb, wind_amb=wind_amb,
+                                            pressure=pr, cell_temp=t_cooling)
 
         "________Calculating the Heat Pump COP_with Cooling effect - based on t_heatflux_out_______"
         heatPump = HeatPump(P_HP)
         heatPumpCOP = round(heatPump.calc_cop_ruhnau(t_heatflux_out, 50, "ashp"), 2)
-        heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(pv_data.temp_air[i], 50, "ashp"), 2)
+        heatPumpCOP_ref = round(heatPump.calc_cop_ruhnau(temp_amb, 50, "ashp"), 2)
 
         "_______Calculating Heat Pump thermal Output_______"
 
@@ -584,7 +584,7 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
 "_________Saving results in excel_____________"
 "_________Original resolution__________"
 
-column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
+column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "POA Global [W/m2]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
 electrical_data_New.fillna(0)  # fill empty rows with 0
@@ -619,21 +619,15 @@ print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
 
 #Building Dataframe with complete results
 complete_data = pd.merge(electrical_data_New, thermal_data)
-complete_data_woc = pd.merge(electrical_data, thermal_data_withoutCooling)
 
 #Reassessing averages of PR Values with values for POA Global > 50 W/m2, with ignoring the last two rows of the results dataframe (Total and Average)
 complete_data['Performance Ratio [-]'][complete_data.index[-1]] = complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)]["Performance Ratio [-]"].sum()/len(complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)])
 complete_data['Performance Ratio STC[-]'][complete_data.index[-1]] = complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)]["Performance Ratio STC[-]"].sum()/len(complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)])
 complete_data['Performance Ratio eq [-]'][complete_data.index[-1]] = complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)]["Performance Ratio eq [-]"].sum()/len(complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)])
 
-#the same for results without cooling effect
-complete_data_woc['Performance Ratio [-]'][complete_data_woc.index[-1]] = complete_data_woc[(complete_data_woc["POA Global [W/m2]"] > 50) & (complete_data_woc.index < complete_data_woc.index[-1]-2)]["Performance Ratio [-]"].sum()/len(complete_data_woc[(complete_data_woc["POA Global [W/m2]"] > 50) & (complete_data_woc.index < complete_data_woc.index[-1]-2)])
-complete_data_woc['Performance Ratio STC[-]'][complete_data_woc.index[-1]] = complete_data_woc[(complete_data_woc["POA Global [W/m2]"] > 50) & (complete_data_woc.index < complete_data_woc.index[-1]-2)]["Performance Ratio STC[-]"].sum()/len(complete_data_woc[(complete_data_woc["POA Global [W/m2]"] > 50) & (complete_data_woc.index < complete_data_woc.index[-1]-2)])
-complete_data_woc['Performance Ratio eq [-]'][complete_data_woc.index[-1]] = complete_data_woc[(complete_data_woc["POA Global [W/m2]"] > 50) & (complete_data_woc.index < complete_data_woc.index[-1]-2)]["Performance Ratio eq [-]"].sum()/len(complete_data_woc[(complete_data_woc["POA Global [W/m2]"] > 50) & (complete_data_woc.index < complete_data_woc.index[-1]-2)])
-
 # Print complete results to excel
 complete_data.to_excel(os.path.join("Exports", r'CompleteResult.xlsx'))
-complete_data_woc.to_excel(os.path.join("Exports", r'CompleteResultWithoutCoolingEffect.xlsx'))
+
 
 "_________15 min resolution__________"
 # Assigning df all data to new varaible electrical data

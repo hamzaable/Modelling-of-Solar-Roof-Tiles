@@ -542,16 +542,17 @@ class SDP_sucking():
         P_Valve=pd.DataFrame(p_Valve)                                                                                   # Save results in DataFrame
         
         fig, ax = plt.subplots(figsize=(8,5), sharex=True)                                                              # Plotting results
-
         ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='red', label='Pressure [bar]')
-        ax.set_xlabel("Valve", fontsize=14)
-        ax.set_ylabel("Pressure [bar]", fontsize=14)
+        ax.set_xlabel("Valve in SRT string", fontsize=14)
+        ax.set_ylabel("Inlet Pressure [bar]", fontsize=14)
+        ax.ticklabel_format(useOffset=False, style='plain', axis='y')
         ax2= ax.twinx()
         ax2.plot(P_Valve['Valve'], P_Valve['Pressure Difference [Pa]'], linestyle='solid', label='Pressure Difference [Pa]')
         ax2.set_ylabel("Pressure Difference [Pa]", fontsize=14)
-        plt.title('Pressure Drop & Pressure Difference to ambient Pressure in the Valves of the subsystem')
+        #plt.title('Pressure Drop & Pressure Difference to ambient Pressure in the Valves of the subsystem')
         fig.legend(bbox_to_anchor=[0.875, 0.85], loc="upper right")
         plt.gcf().autofmt_xdate() 
+       
          
         
         return P_Valve

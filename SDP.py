@@ -228,7 +228,7 @@ sum_m_exceeded = 0
 sum_m_below = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(mdata.index[3560:3580]):   # Full Day Sim.: [0:5906]
+for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
 
 
     "_______Looping through excel rows_______"

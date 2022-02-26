@@ -87,13 +87,14 @@ class Photovoltaic():
             
             self.aoi = pvlib.irradiance.aoi(39, 171,
                                    self.solpos['apparent_zenith'], self.solpos['azimuth'])
+            
             #Manipulation of poa_direct(PVGIS) (E_dir on horizontal plane) to DNI-tilted for get_total_irradiance calculation
             self.dni = self.dni/np.cos(np.radians(90-self.solpos['apparent_elevation'])) 
             
             self.total_irrad = pvlib.irradiance.get_total_irradiance(39, 171,
                                                             self.solpos['apparent_zenith'],
                                                             self.solpos['azimuth'],
-                                                            self.clearsky_dni, self.clearsky_ghi, self.clearsky_dhi,
+                                                            self.dni, self.clearsky_ghi, self.clearsky_dhi,
                                                             dni_extra=self.dni_extra,
                                                             model='haydavies')
             

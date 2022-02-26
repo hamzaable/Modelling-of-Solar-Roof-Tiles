@@ -92,7 +92,7 @@ class Photovoltaic():
             self.total_irrad = pvlib.irradiance.get_total_irradiance(39, 171,
                                                             self.solpos['apparent_zenith'],
                                                             self.solpos['azimuth'],
-                                                            self.clearsky_dni, self.clearsky_ghi, self.clearsky_dhi,
+                                                            self.dni, self.clearsky_ghi, self.clearsky_dhi,
                                                             dni_extra=self.dni_extra,
                                                             model='haydavies',
                                                             albedo=0.20)
@@ -101,8 +101,8 @@ class Photovoltaic():
             self.tcell = pvlib.temperature.faiman(self.total_irrad['poa_global'],
                                                     temp_amb,
                                                     wind_amb,
-                                                    u0=25.0,                # Combined heat loss factor coefficient [W*m^-2*C^-1]
-                                                    u1=6.84)                # Combined heat loss factor influenced by wind [W*m^-2*C^-1(m/s)]
+                                                    u0=17.896,                # Combined heat loss factor coefficient [W*m^-2*C^-1]
+                                                    u1=2.015)                # Combined heat loss factor influenced by wind [W*m^-2*C^-1(m/s)]
             
             self.effective_irradiance = pvlib.pvsystem.sapm_effective_irradiance(
             self.total_irrad['poa_direct'], self.total_irrad['poa_diffuse'],

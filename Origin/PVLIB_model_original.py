@@ -5,6 +5,7 @@ Created on Mon Dec 28 22:06:11 2020
 @author: Vaishnavi Phadke
 """
 import pvlib
+import numpy as np
 #from pvlib.pvsystem import pvsystem
 
 
@@ -69,6 +70,7 @@ class Photovoltaic():
                            
             self.times = time
             
+            self.dni = dni
             self.clearsky_dni = dni
             self.clearsky_ghi = ghi
             self.clearsky_dhi = dhi
@@ -85,7 +87,9 @@ class Photovoltaic():
             
             self.aoi = pvlib.irradiance.aoi(39, 171,
                                    self.solpos['apparent_zenith'], self.solpos['azimuth'])
-    
+            #Manipulation of poa_direct(PVGIS) (E_dir on horizontal plane) to DNI-tilted for get_total_irradiance calculation
+            self.dni = self.dni/np.cos(np.radians(90-self.solpos['apparent_elevation'])) 
+            
             self.total_irrad = pvlib.irradiance.get_total_irradiance(39, 171,
                                                             self.solpos['apparent_zenith'],
                                                             self.solpos['azimuth'],

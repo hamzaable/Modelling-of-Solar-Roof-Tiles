@@ -24,9 +24,9 @@ albedo = 0.20                                                                   
 a_r = 0.14                                                                      # Spectral Corrections factor for different module glasses
 irrad_model = 'haydavies'                                                       # Model for Irradiation calculation. Choose from: 'isotropic', 'klucher', 'haydavies', 'reindl', 'king', 'perez'
 P_PV_STC = 14.4                                                                 # rated power from TüV Calibration report under STC Conditions at 25°C & 1000 W/m^2
-m_azimut = 180                                                                  # Module Azimut (Ausrichtung) [°]
+m_azimut = 171                                                                  # Module Azimut (Ausrichtung) [°]
 m_tilt = 39                                                                     # Module tilt (Neigung) [°]
-
+mass_flow = 0.0094080 #30m3
 
 dwd_data = pd.read_excel(r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx')  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
 
@@ -129,7 +129,7 @@ for i in pv_data.index[0:8760]:
             ambient_temp=pv_data.temp_air[i],
             absorption_incl=E_sdp_1,
             inlet_temp=pv_data.temp_air[i],
-            mass_flow=1,
+            mass_flow=mass_flow,
             print_res=False)
 
     # Step 3

@@ -195,8 +195,8 @@ thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
 pd.set_option('display.max_colwidth', 8)
 print(thermal_data)
 
-Efficiency = thermal_data.loc["Total", "HeatFlux"] / thermal_data.loc["Total", "E_sdp_eff"]
-print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
+#Efficiency = thermal_data.loc["Total", "HeatFlux"] / thermal_data.loc["Total", "E_sdp_eff"]
+#print("Efficiency wrt Effective Irradiance:", round(Efficiency * 100, 2), "%")
 
 complete_data = pd.merge(electrical_data, thermal_data)
 complete_data.to_excel(r'CompleteResults.xlsx')

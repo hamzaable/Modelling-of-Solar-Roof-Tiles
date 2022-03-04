@@ -178,7 +178,7 @@ class SDP_sucking():
     def __init__(self,
                  sdp_in_series,
                  sdp_in_parallel,
-                 loss_key_figures_lin=16.41,
+                 loss_key_figures_lin=34,
                  loss_key_figures_quad=0.03,
                  width_sdp=0.244,
                  thickness_sdp=0.02,
@@ -472,8 +472,12 @@ class SDP_sucking():
             conn_number = 0
             for conn in self.nw.conns['object']:
                     if isinstance(conn.target, Valve):
-                        conn.set_attr(m=m_loss_offdesign["5_1_dpx"][conn_number])
-                        conn_number += 1
+                        if isinstance(m_loss_offdesign, pd.DataFrame):
+                            conn.set_attr(m=m_loss_offdesign["5_1_dpx"][conn_number])
+                            conn_number += 1
+                        else:
+                            conn.set_attr(m=m_loss_offdesign)
+                            conn_number += 1
                     
         self.nw.save("sdp")
         # %% solving

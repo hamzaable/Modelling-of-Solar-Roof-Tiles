@@ -174,7 +174,7 @@ p_amb=1.01325                                                                   
 mass_flow = 0.009408 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
 P_HP = 3500                                                                      #nominal power of the heat Pump in Watts, taken as constant
 
-mass_flow_loss = 0.00062                                                        # assign one unitary value for the mass flow leakage in each valve - linear pressure drop
+# mass_flow_loss = 0.00062                                                        # assign one unitary value for the mass flow leakage in each valve - comment out if CFD values should be used
 
 # Allowed Value range for mass flow is:
 # 0.0646 to 0.00306 kg/s (due to interpolation boundaries)

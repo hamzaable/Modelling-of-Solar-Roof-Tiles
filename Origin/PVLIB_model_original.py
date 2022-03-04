@@ -43,23 +43,23 @@ timezone= 'Etc/GMT+2'
 #           "C4": 1, "C5": 0, "C6": 1, "C7": 0}
 # # =============================================================================
 # #ar=0.14
-"""
+
 module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "Cells_in_Series": 8, 
           "Parallel_Strings": 2, "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, 
           "Aisc": 0.00279, "Aimp": -0.0003, "Bvoco": -0.01608, "Mbvoc": 0, "Bvmpo": -0.01608, 
           "Mbvmp": 0, "N": 1, "IXO": 3.5, "IXXO": 2.05, "A0": 0.9645, "A1": 0.02753, 
           "A2": -0.002848, "A3": -0.0001439, "A4": 0.00002219, "B0": 1.0287, "B1": -0.0108 , 
-          "B2": 0.001, "B3": -4E-05 , "B4": 5E-07, "B5": -3E-09, "DTC": 3, "FD": 1, "A": -3.47, 
+          "B2": 0.0010, "B3": - 3.5338E-05 , "B4": 5.3488E-07, "B5": -2.9287E-09, "DTC": 3, "FD": 1, "A": -3.47, 
           "B": -0.0594, "C0": 1, "C1": 0, "C2": 0.912848952156834, "C3": 0.0582212364987667, 
-          "C4": 1, "C5": 0, "C6": 1, "C7": 0, "celltype": "monoSi", "gamma_pmp": -0.3792} # B parameters assessed via regression of I AM modifier values
-"""
+          "C4": 1, "C5": 0, "C6": 1, "C7": 0, "celltype": "monoSi", "gamma_pmp": -0.3792} # B parameters assessed via regression of I AM modifier values. here, four decimal spaces are the most suitable
 
+"""
 # #ar=0.14
 module = {"Vintage": 2020, "Area": 0.1, "Material": "mc-Si", "celltype": "monoSi", "Cells_in_Series": 8,
           "Isco": 3.5, "Voco": 5.36, "Impo": 3.3, "Vmpo": 4.568, "Aisc": 0.0010, "Bvoco": -0.0158,
           "gamma_pmp": -0.3792, "A0": 0.9645, "A1": 0.02753, "A2": -0.002848, "A3": -0.0001439,
           "A4": 0.00002219}
-
+"""
 # =============================================================================
 # #Alberino P
 # module = {"Vintage": 2020, "Material": "mc-Si", "Cells_in_Series": 8, 
@@ -116,12 +116,12 @@ class Photovoltaic():
                                                         u0=17.896,               # Combined heat loss factor coefficient [W*m^-2*C^-1]
                                                         u1=2.015)                # Combined heat loss factor influenced by wind [W*m^-2*C^-1(m/s)]
             
-            """
+            
             self.effective_irradiance = pvlib.pvsystem.sapm_effective_irradiance(
             self.total_irrad['poa_direct'], self.total_irrad['poa_diffuse'],
             self.am_abs, self.aoi, module)
-            """
             
+            """
             #Estimating Angle of incidence modifier(IAM) using the Martin and Ruiz for diffuse radiation
             self.IAM_mod_diff = pvlib.iam.martin_ruiz_diffuse(
                 39,                                                    # Surface tilt angles in decimal degrees. The tilt angle is defined as degrees from horizontal (e.g. surface facing up = 0, surface facing horizon = 90) surface_tilt must be in the range [0, 180]
@@ -143,11 +143,7 @@ class Photovoltaic():
                                                     + self.IAM_mod_diff[0] * self.total_irrad['poa_sky_diffuse']
                                                     + self.IAM_mod_diff[1] * self.total_irrad['poa_ground_diffuse'])   
         
-            
-    
-            self.dc = pvlib.pvsystem.sapm(self.effective_irradiance, self.tcell, module)
-            self.annual_energy = self.dc['p_mp'].sum()
-            
+            """
             #Estimates parameters for the CEC single diode model (SDM) using the SAM SDK
             #For Details on the single module specs see module definition in SDP.py 
             self.mp_fit_cec_sam = pvlib.ivtools.sdm.fit_cec_sam(

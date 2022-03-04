@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 
 from tqdm import tqdm
+import pytz
+import datetime as dt
 
 ##########
 from PVLIB_model import Photovoltaic
@@ -26,7 +28,7 @@ latitude = 50.934055
 longitude = 6.990349
 name = 'Cologne'
 altitude = 121
-timezone = 'Etc/GMT+2'
+timezone = 'Etc/GMT+1'                                                          # IMPORTANT: This is not the timezone the site is located at, it is the timezone corresponding to the imported dataset! The timestamp will be converted later to UTC to match with the solarposition calculation!
 
 "______Photovoltaic Parameters_________"
 
@@ -105,26 +107,18 @@ MeasurementData = MeasurementDataImport()
 mdata_AC_power, mdata = MeasurementData.ReturnMeasurementData()
 print("\nImport finished.\n")
 
-# Import Weather Data Set
-"Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)"
-"""
-dwd_data = pd.read_excel(os.path.join("Imports", r'Timeseries_JRC_PVGIS_TH_Koeln.xlsx'))  # Hourly Weather Data (DNI , GHI , DHI , temp_air , wind speed and pressure)
+"_____Time zone Conversion_____________"
+mdata["Zeitstempel"] = pd.to_datetime(mdata["Zeitstempel"])
 
-pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
-                                                      "dhi",
-                                                      "temp_air",
-                                                      "wind_speed", "pressure"])
-"__________Assign Headers to pv_data Dataframe________________"
+for i in range (len(mdata["Zeitstempel"])):                                                                 # Adding the corresponding hour(s) onto the time for every timestamp, depending on the timezone defined above
+    tnew = pd.Timestamp(mdata["Zeitstempel"][i], tz=timezone)
+    tnew = tnew.tz_convert('UTC')
+    mdata["Zeitstempel"][i] = tnew
 
-pv_data["DateTimeIndex"] = dwd_data.date
-pv_data["DateTimeIndex"] = pd.to_datetime(pv_data["DateTimeIndex"])
-pv_data["dni"] = dwd_data.irradiance_dir                                        # direct Solar irradition (horizontal)
-pv_data["dhi"] = dwd_data.irradiance_diff                                       # diffuse solar radiation (horizontal)
-pv_data["ghi"] = dwd_data.poa_global                                            # global irrradiation     (horizontal)
-pv_data["temp_air"] = dwd_data.temp
-pv_data["wind_speed"] = dwd_data.wind_speed
-pv_data["pressure"] = dwd_data.pr
-"""
+mdata["Zeitstempel"] = mdata["Zeitstempel"].apply(lambda a: dt.datetime.strftime(a,"%Y-%m-%d %H:%M:%S"))    # The timestamp has to be converted back once again to strftime, because excel can not export timestamps with timezones attached, later.
+mdata["Zeitstempel"] = pd.to_datetime(mdata["Zeitstempel"])                                                 # After removing the timezone, getting it back to a datetime type of variable for beeing applicapable for further methods
+
+
 "________Hourly house demand (elec_cons , thermal_cons)________"
 house_data_read = pd.read_excel(os.path.join("Imports", r'house_demand.xlsx'))
 
@@ -380,6 +374,10 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
                 m_out = 0
 
         countNonZero = countNonZero + 1
+        
+    "______Control Scheme for unreasonable temperature values due to low POA Global_____"
+    if electrical_yield.total_irrad["poa_global"].item() < 50:
+            t_heatflux_out=temp_amb
 
     "____Finding Avg temperature for cooling effect_____"
 
@@ -467,7 +465,11 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
             autarky_rate = 0
 
         #df_test_elecindicators = [i, time, round(t_avg_new, 2), round(electrical_yield_new.annual_energy, 2), int(electrical_yield_new.effective_irradiance), C_k_STC, E_ideal_STC, PR_STC, C_k_annual, Y_F, PR_annual_eq, autarky_rate]
-
+        "______Control Scheme for unreasonable temperture values due to low POA Global_____"
+        if electrical_yield.total_irrad["poa_global"].item() < 50:
+                t_cooling=temp_amb
+                t_heatflux_out=temp_amb
+                
         "______Saving results__________"
         dfSubElec_New = [i,
                          time,
@@ -523,7 +525,10 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
                 p_fan = 0
                 m_out = 0
 
-
+        "______Control Scheme for unreasonable temperature values due to low POA Global_____"
+        if electrical_yield.total_irrad["poa_global"].item() < 50:
+                t_heatflux_out=temp_amb
+                
         # t_m = (temp_amb + t_out_init) / 2
         # t_avg_new = (T_PV_Temp_Model + t_m) / 2
         #

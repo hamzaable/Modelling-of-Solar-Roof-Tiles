@@ -112,29 +112,6 @@ class Photovoltaic():
             self.total_irrad['poa_direct'], self.total_irrad['poa_diffuse'],
             self.am_abs, self.aoi, module)
             
-            """
-            #Estimating Angle of incidence modifier(IAM) using the Martin and Ruiz for diffuse radiation
-            self.IAM_mod_diff = pvlib.iam.martin_ruiz_diffuse(
-                39,                                                    # Surface tilt angles in decimal degrees. The tilt angle is defined as degrees from horizontal (e.g. surface facing up = 0, surface facing horizon = 90) surface_tilt must be in the range [0, 180]
-                a_r=0.14,                                                   # The angular losses coefficient. This is an empirical dimensionless parameter. Values of a_r are generally on the order of 0.08 to 0.25 for flat-plate PV modules. a_r must be greater than zero.
-                c1=0.4244,                                                      # First fitting parameter for the expressions that approximate the integral of diffuse irradiance coming from different directions. c1 is given as the constant 4 / 3 / pi (0.4244) 
-                c2=None)                                                        # Second fitting parameter for the expressions that approximate the integral of diffuse irradiance coming from different directions. If c2 is None, it will be calculated according to the linear relationship in IEC 61853-3 
-            
-            #Calculating SAPM spectral loss coefficient, F1.
-            self.F1 = pvlib.pvsystem.sapm_spectral_loss(
-                self.am_abs,                                                    # Absolute airmass
-                module)                                                    # A dict, Series, or DataFrame defining the SAPM performance parameters. Defined in SDP.py
-                        
-            #Estimating Angle of incidence modifier(IAM) using the Martin and Ruiz for direct radiation
-            self.IAM_mod_dir = pvlib.iam.martin_ruiz(
-                self.aoi,                                                       # The angle of incidence between the module normal vector and the sun-beam vector in degrees.
-                a_r=0.14)                                                   # The angular losses coefficient. This is an empirical dimensionless parameter. Values of a_r are generally on the order of 0.08 to 0.25 for flat-plate PV modules. a_r must be greater than zero.
-            
-            self.effective_irradiance  = self.F1 * (self.total_irrad['poa_direct'] * self.IAM_mod_dir 
-                                                    + self.IAM_mod_diff[0] * self.total_irrad['poa_sky_diffuse']
-                                                    + self.IAM_mod_diff[1] * self.total_irrad['poa_ground_diffuse'])   
-        
-            """
     
             self.dc = pvlib.pvsystem.sapm(self.effective_irradiance, self.tcell, module)
             self.annual_energy = self.dc['p_mp'].sum()

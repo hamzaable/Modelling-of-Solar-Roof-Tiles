@@ -4,7 +4,6 @@ import os
 
 import pandas as pd
 import numpy as np
-
 from tqdm import tqdm
 
 ##########
@@ -163,8 +162,6 @@ mass_flow_loss = mass_flow_loss.select_dtypes(exclude='object').div(1.3).combine
 first_c = mass_flow_loss.pop('SDP')                                                                         # Reassemble Dataframe
 mass_flow_loss.insert(0, 'SDP', first_c)
 
-# mass_flow_loss = 0.001                                                        # assign one unitary value for the mass flow leakage in each valve
-# mass_flow_loss = None
 
 "______TESPy Model Parameters_________"
 
@@ -176,6 +173,8 @@ ks_SRT = 0.000225                                                               
 p_amb=1.01325                                                                   # Atmospheric pressure [Bar]
 mass_flow = 0.009408 #0.0320168                                                         # Can be one value or string (from measurement data later on). IMPORTANT: This mass flow value applies for one String of 12 SRTs and is not the mass flow delivered by the fan for the whole SRT plant!
 P_HP = 3500                                                                      #nominal power of the heat Pump in Watts, taken as constant
+
+mass_flow_loss = 0.00062                                                        # assign one unitary value for the mass flow leakage in each valve - linear pressure drop
 
 # Allowed Value range for mass flow is:
 # 0.0646 to 0.00306 kg/s (due to interpolation boundaries)
@@ -235,15 +234,17 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
     dhi = pv_data.dhi[i]
 
     "______Calculating ks value & mass flow leakage via interpolation______"
-
-    if mass_flow_temp != mass_flow:
-        m_loss_offdesign, ks_SRT, mass_flow_temp = sdp.interpolate_ks_mloss(i=i,
-                                                              op_strategy=op_strategy,
-                                                              os_name=os_name,
-                                                              mass_flow=mass_flow,
-                                                              mass_flow_loss=mass_flow_loss,
-                                                              mass_flow_temp=mass_flow_temp)
-        m_loss_offdesign = m_loss_offdesign.set_axis(['5_1_dpx'], axis=1, inplace=False)
+    if isinstance(mass_flow_loss, pd.DataFrame):
+        if mass_flow_temp != mass_flow:
+            m_loss_offdesign, ks_SRT, mass_flow_temp = sdp.interpolate_ks_mloss(i=i,
+                                                                  op_strategy=op_strategy,
+                                                                  os_name=os_name,
+                                                                  mass_flow=mass_flow,
+                                                                  mass_flow_loss=mass_flow_loss,
+                                                                  mass_flow_temp=mass_flow_temp)
+            m_loss_offdesign = m_loss_offdesign.set_axis(['5_1_dpx'], axis=1, inplace=False)
+    else:
+        m_loss_offdesign = mass_flow_loss
 
 
     "______Getting the initial cell temperature______"

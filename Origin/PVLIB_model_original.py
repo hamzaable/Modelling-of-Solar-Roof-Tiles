@@ -113,8 +113,8 @@ class Photovoltaic():
             self.am_abs, self.aoi, module)
             
     
-            self.dc = pvlib.pvsystem.sapm(self.effective_irradiance, self.tcell, module)
-            self.annual_energy = self.dc['p_mp'].sum()
+            #self.dc = pvlib.pvsystem.sapm(self.effective_irradiance, self.tcell, module)
+            #self.annual_energy = self.dc['p_mp'].sum()
             
             #Estimates parameters for the CEC single diode model (SDM) using the SAM SDK
             #For Details on the single module specs see module definition in SDP.py 

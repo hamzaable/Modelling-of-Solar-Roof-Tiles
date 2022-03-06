@@ -28,7 +28,8 @@ latitude = 50.934055
 longitude = 6.990349
 name = 'Cologne'
 altitude = 121
-timezone = 'Etc/GMT+1'                                                          # IMPORTANT: This is not the timezone the site is located at, it is the timezone corresponding to the imported dataset! The timestamp will be converted later to UTC to match with the solarposition calculation!
+timezone = 1                                                                    # Enter the time zone matching the imported data set in hours of Off-Set. Example: 'Etc/GMT+1': 1. Halfed Timezones are also allowed, f.e.: 0.5
+                                                                                # IMPORTANT: This is not the timezone the site is located at, it is the timezone corresponding to the imported dataset! The timestamp will be converted later to UTC to match with the solarposition calculation!
 
 "______Photovoltaic Parameters_________"
 
@@ -109,14 +110,12 @@ print("\nImport finished.\n")
 
 "_____Time zone Conversion_____________"
 mdata["Zeitstempel"] = pd.to_datetime(mdata["Zeitstempel"])
-
+timezone = timezone * 60                                                                                    # Timezone in minutes for specific Offset
+                                                                                   
 for i in range (len(mdata["Zeitstempel"])):                                                                 # Adding the corresponding hour(s) onto the time for every timestamp, depending on the timezone defined above
-    tnew = pd.Timestamp(mdata["Zeitstempel"][i], tz=timezone)
-    tnew = tnew.tz_convert('UTC')
+    tnew = pd.Timestamp(mdata["Zeitstempel"][i], tz=pytz.FixedOffset(timezone))
+    #tnew = tnew.tz_convert('UTC')
     mdata["Zeitstempel"][i] = tnew
-
-mdata["Zeitstempel"] = mdata["Zeitstempel"].apply(lambda a: dt.datetime.strftime(a,"%Y-%m-%d %H:%M:%S"))    # The timestamp has to be converted back once again to strftime, because excel can not export timestamps with timezones attached, later.
-mdata["Zeitstempel"] = pd.to_datetime(mdata["Zeitstempel"])                                                 # After removing the timezone, getting it back to a datetime type of variable for beeing applicapable for further methods
 
 
 "________Hourly house demand (elec_cons , thermal_cons)________"
@@ -222,7 +221,7 @@ sum_m_exceeded = 0
 sum_m_below = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
+for i in tqdm(mdata.index[2500:2505]):   # Full Day Sim.: [0:5906]
 
 
     "_______Looping through excel rows_______"
@@ -581,17 +580,21 @@ for i in tqdm(mdata.index[0:5906]):   # Full Day Sim.: [0:5906]
 
     dfMainElec.append(dfSubElec)
     dfMainElecNew.append(dfSubElec_New)
-
-    #df_test_elecindicators_full.append(df_test_elecindicators)
-
-#df_test_elecindicators_full = pd.DataFrame(df_test_elecindicators_full)
-
+    
+    
+   
 "_________Saving results in excel_____________"
 "_________Original resolution__________"
 
+# electrical
 column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "POA Global [W/m2]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
+
+#Removing Timezone for beeing able to export
+electrical_data_New["Time"] = electrical_data_New["Time"].apply(lambda a: dt.datetime.strftime(a,"%Y-%m-%d %H:%M:%S"))    # The timestamp has to be converted back once again to strftime, because excel can not export timestamps with timezones attached, later.
+electrical_data_New["Time"] = pd.to_datetime(electrical_data_New["Time"])                                                 # After removing the timezone, getting it back to a datetime variable type 
+
 electrical_data_New.fillna(0)  # fill empty rows with 0
 div = len(electrical_data_New[electrical_data_New["Effective Irradiance [W/m^2]"] > 0])
 
@@ -600,19 +603,15 @@ electrical_data_New.loc['Average'] = electrical_data_New.loc['Total']/countNonZe
 
 pd.set_option('display.max_colwidth', 40)
 
-
-electrical_data = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
-electrical_data.fillna(0)  # fill empty rows with 0
-electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
-electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero  # finding total number of rows
-#electrical_data.loc['Total']['Time'] = "Sum"
-pd.set_option('display.max_colwidth', 40)
-
-
-
+# thermal
 column_values = ["Index", "Time", "E_sdp_eff", "P_fan", "mass_flow kg/s", "HeatFlux_[kW/m^2]","Thermal Efficency","status",
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
+
+#Removing Timezone for beeing able to export
+thermal_data["Time"] = thermal_data["Time"].apply(lambda a: dt.datetime.strftime(a,"%Y-%m-%d %H:%M:%S"))    # The timestamp has to be converted back once again to strftime, because excel can not export timestamps with timezones attached, later.
+thermal_data["Time"] = pd.to_datetime(thermal_data["Time"])                                                 # After removing the timezone, getting it back to a datetime variable type 
+
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
 thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
@@ -630,6 +629,7 @@ complete_data['Performance Ratio [-]'][complete_data.index[-1]] = complete_data[
 complete_data['Performance Ratio STC[-]'][complete_data.index[-1]] = complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)]["Performance Ratio STC[-]"].sum()/len(complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)])
 complete_data['Performance Ratio eq [-]'][complete_data.index[-1]] = complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)]["Performance Ratio eq [-]"].sum()/len(complete_data[(complete_data["POA Global [W/m2]"] > 50) & (complete_data.index < complete_data.index[-1]-2)])
 
+
 # Print complete results to excel
 complete_data.to_excel(os.path.join("Exports", r'CompleteResult.xlsx'))
 
@@ -637,6 +637,9 @@ complete_data.to_excel(os.path.join("Exports", r'CompleteResult.xlsx'))
 "_________15 min resolution__________"
 # Assigning df all data to new varaible electrical data
 electrical_data_New_15T = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
+#Removing Timezone for beeing able to export
+electrical_data_New_15T["Time"] = electrical_data_New_15T["Time"].apply(lambda a: dt.datetime.strftime(a,"%Y-%m-%d %H:%M:%S"))    # The timestamp has to be converted back once again to strftime, because excel can not export timestamps with timezones attached, later.
+electrical_data_New_15T["Time"] = pd.to_datetime(electrical_data_New_15T["Time"])                                                 # After removing the timezone, getting it back to a datetime variable type 
 
 
 complete_data_15T = pd.merge(electrical_data_New_15T, thermal_data)

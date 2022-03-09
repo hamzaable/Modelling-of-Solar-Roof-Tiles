@@ -220,7 +220,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
+for i in tqdm(pv_data.index[8:10]):   # One Year Sim.: [0:8759]
 
 
     "_______Looping through excel rows_______"
@@ -655,3 +655,26 @@ print("\nAnnual performance factor (Jahresarbeitzahl) of the heat Pump: ", Jahre
 
 P_Valve = sdp.plot_temperature_curve(p_amb=p_amb)
 #len(electrical_data_New[electrical_data_New["Effective Irradiance [W/m^2]"] > 0])
+
+"""
+# Comparison of simulation model fit concerning pressure drop values against CFD Simulation
+
+prd = [-0.25277175,-0.41313477,-0.55841075,-0.72464003,-0.9216673,-1.1718515,-1.4985758,-1.9263446,-2.4939204,-3.2771415,-4.3570935,-5.5199782]
+prd = pd.DataFrame(data=prd)
+P_Valve['CFD'] = prd
+
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(8,5), sharex=True)                                                              # Plotting results
+ax.plot(P_Valve['Valve'], P_Valve['Pressure [bar]'], linestyle='solid', color='white')
+ax.set_xlabel("Valve in SRT string", fontsize=14)
+ax.set_ylabel("Pressure [bar]", fontsize=14)
+ax.ticklabel_format(useOffset=False, style='plain', axis='y')
+ax2= ax.twinx()
+ax2.plot(P_Valve['Valve'], P_Valve['CFD'], linestyle='solid', label='CFD simulations', linewidth=3.0)
+ax2.plot( P_Valve['Valve'], P_Valve['Pressure Difference [Pa]'], linestyle='dashdot', label='Simulation Model', color='red', linewidth=3.0)
+
+ax2.set_ylabel("Pressure Difference [Pa]", fontsize=14)
+fig.legend(bbox_to_anchor=[0.875, 0.85], loc="upper right")
+plt.gcf().autofmt_xdate()
+"""

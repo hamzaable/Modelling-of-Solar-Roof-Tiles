@@ -10,7 +10,7 @@ import math
 
 
 class Photovoltaic():
-    def __init__(self, latitude, longitude, altitude, timezone, m_azimut, m_tilt, module_number, time, dni, ghi, dhi, albedo, a_r, irrad_model, module, temp_amb, wind_amb, pressure,cell_temp ):
+    def __init__(self, latitude, longitude, altitude, m_azimut, m_tilt, module_number, time, dni, ghi, dhi, albedo, a_r, irrad_model, module, temp_amb, wind_amb, pressure,cell_temp ):
     
         #Get Parameters
         self.temperature_model_parameters = pvlib.temperature.TEMPERATURE_MODEL_PARAMETERS['sapm']['close_mount_glass_glass']

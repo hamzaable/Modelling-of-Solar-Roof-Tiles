@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 #  Test cooling effect
 import os
-
+import pytz
+import datetime as dt
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -23,7 +24,9 @@ latitude = 50.934055
 longitude = 6.990349
 name = 'Cologne'
 altitude = 121
-timezone = 'Etc/GMT+2'
+timezone_wd = 0     # Time Zone corresponding to dataset                        # Enter the time zone matching the imported data set in hours of Off-Set. Example: 'Etc/GMT+1': 1. Halfed Timezones are also allowed, f.e.: 0.5
+timezone_site = 1   # TIme Zone corresponding to system Location                # The timezones are needed to localize the Datetime indexes in order to allow a correct sunposition calculation in the PV Model                                                             
+
 
 "______Photovoltaic Parameters_________"
 
@@ -105,6 +108,7 @@ pv_data = pd.DataFrame(index=dwd_data.index, columns=["dni", "ghi",
                                                       "dhi",
                                                       "temp_air",
                                                       "wind_speed", "pressure"])
+
 "__________Assign Headers to pv_data Dataframe________________"
 
 pv_data["DateTimeIndex"] = dwd_data.date
@@ -115,6 +119,15 @@ pv_data["ghi"] = dwd_data.poa_global                                            
 pv_data["temp_air"] = dwd_data.temp
 pv_data["wind_speed"] = dwd_data.wind_speed
 pv_data["pressure"] = dwd_data.pr
+
+"_____Time zone Conversion_____________"
+pv_data["DateTimeIndex"] = pd.to_datetime(pv_data["DateTimeIndex"])
+timezone_wd = timezone_wd * 60                                                                                    # Timezone in minutes for specific Offset
+                                                                                   
+for i in range (len(pv_data["DateTimeIndex"])):                                                                 # Adding the corresponding hour(s) onto the time for every timestamp, depending on the timezone defined above
+    tnew = pd.Timestamp(pv_data["DateTimeIndex"][i], tz=pytz.FixedOffset(timezone_wd))
+    pv_data["DateTimeIndex"][i] = tnew
+    
 
 "________Hourly house demand (elec_cons , thermal_cons)________"
 house_data_read = pd.read_excel(os.path.join("Imports", r'house_demand.xlsx'))
@@ -220,7 +233,7 @@ totalPowerDiff = 0
 countNonZero = 0
 
 #for i in tqdm(pv_data.index[8:10]):
-for i in tqdm(pv_data.index[8:10]):   # One Year Sim.: [0:8759]
+for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
 
     "_______Looping through excel rows_______"
@@ -258,7 +271,7 @@ for i in tqdm(pv_data.index[8:10]):   # One Year Sim.: [0:8759]
 
 
     "________Finding the electrical yield & Solar data based in initial cell temperature_______"
-    electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude, timezone=timezone,
+    electrical_yield = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,
                                     m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
@@ -396,7 +409,6 @@ for i in tqdm(pv_data.index[8:10]):   # One Year Sim.: [0:8759]
 
         "________This electrical_yield_new is using cell temperature found from cooling effect above________"
         electrical_yield_new = Photovoltaic(latitude=latitude, longitude=longitude, altitude=altitude,
-                                            timezone=timezone,
                                             m_azimut=m_azimut, m_tilt=m_tilt,
                                             module_number=num_sdp_series * num_sdp_parallel,
                                             time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i],
@@ -576,13 +588,29 @@ for i in tqdm(pv_data.index[8:10]):   # One Year Sim.: [0:8759]
     dfThermalMain_withoutCooling.append(dfThermalSub_withoutCooling)
     dfThermalMain.append(dfThermalSub)
 
+"_____Time zone Conversion_- Timezone_corresponding_to_Site_location___________"
 
-"_________Saving results in excel_____________"
-
-#irradiation
 column_values = ["Index", "Time", "Apparenth Zenith [°]", "Apparenth Elevation [°]", "Azimuth [°]", "AOI [°]","GHI [W/m2]", "DHI [W/m2]",
                  "E_Dir_hor [W/m2]", "DNI [W/m2]", "IAM", "IAM sky diffuse", "IAM ground diffuse", "POA GLobal [W/m2]", "POA direct [W/m2]", "POA Sky Diffuse [W/m2]", "POA Ground Diffuse [W/m2]", "Effective Irradiance [W/m2]", "DC-Power Output [W]"]
 dfirrad_Main = pd.DataFrame(data=dfirrad_Main, columns=column_values)
+
+dfirrad_Main["Time"] = pd.to_datetime(dfirrad_Main["Time"] )
+timezone_site = timezone_site * 60                                                                                  # Timezone in minutes for specific Offset
+                                                                                   
+for i in range (len(dfirrad_Main["Time"] )):                                                                 # Adding the corresponding hour(s) onto the time for every timestamp, depending on the timezone defined above
+    tnew = pd.Timestamp(dfirrad_Main["Time"] [i]).tz_convert(pytz.FixedOffset(timezone_site))
+    dfirrad_Main["Time"] [i] = tnew
+    
+#Removing Timezone for beeing able to export
+try:
+    dfirrad_Main["Time"]  = dfirrad_Main["Time"] .apply(lambda a: dt.datetime.strftime(a,"%Y-%m-%d %H:%M:%S"))    # The timestamp has to be converted back once again to strftime, because excel can not export timestamps with timezones attached, later.
+    dfirrad_Main["Time"]  = pd.to_datetime(dfirrad_Main["Time"] ) 
+except: 
+    print("")
+    
+"_________Saving results in excel_____________"
+
+#irradiation - 
 dfirrad_Main.loc['Total'] = dfirrad_Main.select_dtypes(np.number).sum()  # finding total number of rows
 dfirrad_Main.to_excel(os.path.join("Exports", r'Sun_position_and_Irradiation.xlsx'))
 
@@ -590,6 +618,8 @@ dfirrad_Main.to_excel(os.path.join("Exports", r'Sun_position_and_Irradiation.xls
 column_values_elec = ["Index", "Time", "Tamb [°C]","Tmcooling [°C]","Tm [°C]","T heatflux [°C]", "Power-DC [W]", "Power-AC [W]", "POA Global [W/m2]", "Effective Irradiance [W/m^2]", "Elec. Efficency [%]","ideal elec. energy yield [Wh]","Performance Ratio [-]","Performance Ratio STC[-]","Performance Ratio eq [-]","spez. elec. energy yield [kWh/kWp]","Autarky rate [%]","HP_COP [-]","HP_Thermal[Wh]"]
 # Assigning df all data to new varaible electrical data
 electrical_data_New = pd.DataFrame(data=dfMainElecNew, columns=column_values_elec)
+electrical_data_New["Time"] = dfirrad_Main["Time"] 
+
 electrical_data_New.fillna(0)  # fill empty rows with 0
 div = len(electrical_data_New[electrical_data_New["Effective Irradiance [W/m^2]"] > 0])
 
@@ -600,9 +630,10 @@ pd.set_option('display.max_colwidth', 40)
 
 
 electrical_data = pd.DataFrame(data=dfMainElec, columns=column_values_elec)
+electrical_data["Time"] = dfirrad_Main["Time"]                                  # Assign time stamp according to site location
 electrical_data.fillna(0)  # fill empty rows with 0
-electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()  # finding total number of rows
-electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero  # finding total number of rows
+electrical_data.loc['Total'] = electrical_data.select_dtypes(np.number).sum()   # finding total number of rows
+electrical_data.loc['Average'] = electrical_data.loc['Total']/countNonZero      # finding total number of rows
 #electrical_data.loc['Total']['Time'] = "Sum"
 pd.set_option('display.max_colwidth', 40)
 
@@ -611,11 +642,13 @@ pd.set_option('display.max_colwidth', 40)
 column_values = ["Index", "Time", "E_sdp_eff", "P_fan", "M_out", "HeatFlux_[kW/m^2]","Thermal Efficency","status",
                  "Elec_demand_met", "Heat_demand_met"]
 thermal_data = pd.DataFrame(data=dfThermalMain, columns=column_values)
+thermal_data["Time"] = dfirrad_Main["Time"]                                  # Assign time stamp according to site location
 thermal_data.loc['Total'] = thermal_data.select_dtypes(np.number).sum()
 thermal_data.loc['Average'] = thermal_data.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)
 
 thermal_data_withoutCooling = pd.DataFrame(data=dfThermalMain_withoutCooling, columns=column_values)
+thermal_data_withoutCooling["Time"] = dfirrad_Main["Time"]                                  # Assign time stamp according to site location
 thermal_data_withoutCooling.loc['Total'] = thermal_data_withoutCooling.select_dtypes(np.number).sum()
 thermal_data_withoutCooling.loc['Average'] = thermal_data_withoutCooling.loc['Total']/countNonZero
 pd.set_option('display.max_colwidth', 8)

@@ -242,6 +242,7 @@ class cellTemperature():
         self.m_azimut = m_azimut
         self.m_tilt = m_tilt
     
+        self.dni = dni
         self.clearsky_dni = dni
         self.clearsky_ghi = ghi
         self.clearsky_dhi = dhi
@@ -254,19 +255,12 @@ class cellTemperature():
     
         self.dni_extra = pvlib.irradiance.get_extra_radiation(self.times)
     
-        # Manipulation of poa_direct(PVGIS)/DNI on horizontal plane to DNI-tilted for get_total_irradiance calculation
-        self.dni_beam = pvlib.irradiance.dni(self.clearsky_ghi, 
-                                                  self.clearsky_dhi, 
-                                                  self.solpos['apparent_zenith'], 
-                                                  clearsky_dni=None, 
-                                                  clearsky_tolerance=1.1, 
-                                                  zenith_threshold_for_zero_dni=88.0, 
-                                                  zenith_threshold_for_clearsky_limit=80.0)
+        self.dni = self.dni/np.cos(np.radians(90-self.solpos['apparent_elevation']))
     
         self.total_irrad = pvlib.irradiance.get_total_irradiance(self.m_tilt, self.m_azimut,
                                                                     self.solpos['apparent_zenith'],
                                                                     self.solpos['azimuth'],
-                                                                    self.dni_beam, self.clearsky_ghi,
+                                                                    self.dni, self.clearsky_ghi,
                                                                     self.clearsky_dhi,
                                                                     dni_extra=self.dni_extra,
                                                                     model=self.irrad_model,

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pvlib
+import numpy as np
 
 # from pvlib.pvsystem import pvsystem
 
@@ -89,10 +90,13 @@ class Photovoltaic():
         self.aoi = pvlib.irradiance.aoi(39, 180,
                                         self.solpos['apparent_zenith'], self.solpos['azimuth'])
 
+        self.dni = dni
+        self.dni = self.dni / np.cos(np.radians(90 - self.solpos['apparent_elevation']))
+
         self.total_irrad = pvlib.irradiance.get_total_irradiance(39, 180,
                                                                  self.solpos['apparent_zenith'],
                                                                  self.solpos['azimuth'],
-                                                                 self.clearsky_dni, self.clearsky_ghi,
+                                                                 self.dni, self.clearsky_ghi,
                                                                  self.clearsky_dhi,
                                                                  dni_extra=self.dni_extra,
                                                                  model='haydavies')
@@ -100,6 +104,7 @@ class Photovoltaic():
         self.tcell = pvlib.temperature.sapm_cell(self.total_irrad['poa_global'],
                                                  temp_amb, wind_amb,
                                                  -2.98, -0.0471, 1)
+
 
         self.effective_irradiance = pvlib.pvsystem.sapm_effective_irradiance(
             self.total_irrad['poa_direct'], self.total_irrad['poa_diffuse'],

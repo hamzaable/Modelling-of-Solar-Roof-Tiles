@@ -232,7 +232,7 @@ dfirrad_Main = [] # complete Dataframe for predicted irradiation Data and DC-Pow
 totalPowerDiff = 0
 countNonZero = 0
 
-#for i in tqdm(pv_data.index[8:10]):
+
 for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
 
 
@@ -275,7 +275,8 @@ for i in tqdm(pv_data.index[0:8759]):   # One Year Sim.: [0:8759]
                                     m_azimut=m_azimut, m_tilt=m_tilt, module_number=num_sdp_series*num_sdp_parallel,
                                     time=pv_data.DateTimeIndex[i], dni=pv_data.dni[i], ghi=pv_data.ghi[i], dhi=pv_data.dhi[i],
                                     albedo=albedo, a_r=a_r, irrad_model=irrad_model, module=module,
-                                    temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i],cell_temp=initCellTemperature.tcell)
+                                    temp_amb=pv_data.temp_air[i], wind_amb=pv_data.wind_speed[i],pressure=pv_data.pressure[i],
+                                    cell_temp=initCellTemperature.tcell)
 
     "_______Making an Array of results got from electrical_yieldcmd_______"
     if int(electrical_yield.effective_irradiance) == 0 :
